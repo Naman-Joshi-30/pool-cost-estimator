@@ -3,857 +3,909 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Custom Pool Cost Estimator | Instant Pricing Calculator</title>
-  <!-- Tailwind CSS CDN -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script>
-    tailwind.config = {
-      theme: {
-        extend: {
-          colors: {
-            ocean: {
-              50: '#f0f9ff',
-              100: '#e0f2fe',
-              500: '#0ea5e9',
-              600: '#0284c7',
-              700: '#0369a1',
-              800: '#075985',
-              900: '#0c4a6e',
-            },
-            cyanAccent: '#06b6d4',
-          }
-        }
-      }
-    }
-  </script>
+  <title>Custom Pool Cost Estimator | Instant Pricing</title>
   <style>
-    /* Custom range slider styling */
+    /* Reset & Base System */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: #f8fafc;
+      color: #0f172a;
+      line-height: 1.5;
+      padding: 16px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+    }
+
+    /* Container Card */
+    .calc-card {
+      width: 100%;
+      max-width: 680px;
+      background: #ffffff;
+      border-radius: 20px;
+      box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.08), 0 8px 10px -6px rgba(15, 23, 42, 0.04);
+      border: 1px solid #e2e8f0;
+      overflow: hidden;
+    }
+
+    /* Header */
+    .calc-header {
+      background: linear-gradient(135deg, #082f49 0%, #0369a1 100%);
+      color: #ffffff;
+      padding: 24px;
+    }
+    .header-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+    .header-title { font-size: 20px; font-weight: 800; letter-spacing: -0.02em; }
+    .header-sub { font-size: 13px; color: #bae6fd; margin-top: 2px; }
+    .badge-live {
+      background: rgba(255, 255, 255, 0.12);
+      padding: 4px 10px;
+      border-radius: 9999px;
+      font-size: 11px;
+      font-weight: 600;
+      color: #e0f2fe;
+    }
+
+    /* Progress Bar */
+    .progress-track {
+      background: rgba(255, 255, 255, 0.2);
+      height: 6px;
+      border-radius: 9999px;
+      overflow: hidden;
+      margin-top: 8px;
+    }
+    .progress-fill {
+      background: #38bdf8;
+      height: 100%;
+      width: 33%;
+      transition: width 0.3s ease;
+      border-radius: 9999px;
+    }
+    .step-labels {
+      display: flex;
+      justify-content: space-between;
+      font-size: 12px;
+      color: #bae6fd;
+      font-weight: 600;
+    }
+    .step-labels .active { color: #ffffff; }
+
+    /* Body */
+    .calc-body { padding: 24px; }
+    .step-pane { display: none; }
+    .step-pane.active { display: block; animation: fadeIn 0.25s ease; }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .section-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: #1e293b;
+      margin-bottom: 8px;
+      display: block;
+    }
+    .section-desc { font-size: 12px; color: #64748b; margin-bottom: 14px; }
+
+    /* Radio Cards Grid */
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+    @media (max-width: 580px) {
+      .grid-3 { grid-template-columns: 1fr; }
+    }
+
+    .radio-card {
+      border: 2px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 12px;
+      cursor: pointer;
+      background: #ffffff;
+      transition: all 0.15s ease;
+      position: relative;
+    }
+    .radio-card:hover { border-color: #38bdf8; }
+    .radio-card.selected {
+      border-color: #0284c7;
+      background: #f0f9ff;
+    }
+    .radio-card input { display: none; }
+    .radio-title { font-size: 13px; font-weight: 700; color: #0f172a; margin-bottom: 2px; }
+    .radio-desc { font-size: 11px; color: #64748b; line-height: 1.3; }
+    .tag-pill {
+      display: inline-block;
+      margin-top: 8px;
+      font-size: 10px;
+      font-weight: 700;
+      padding: 2px 6px;
+      border-radius: 4px;
+      background: #e0f2fe;
+      color: #0369a1;
+    }
+
+    /* Controls Container */
+    .control-box {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 14px;
+      padding: 18px;
+      margin-bottom: 20px;
+    }
+    .slider-row { margin-bottom: 16px; }
+    .slider-row:last-child { margin-bottom: 0; }
+    .slider-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 6px;
+      font-size: 13px;
+    }
+    .slider-val { font-weight: 800; color: #0284c7; }
+
+    /* Custom Sliders */
     input[type=range] {
       -webkit-appearance: none;
       width: 100%;
-      background: transparent;
-    }
-    input[type=range]:focus {
+      height: 6px;
+      background: #cbd5e1;
+      border-radius: 9999px;
       outline: none;
     }
-    input[type=range]::-webkit-slider-runnable-track {
-      width: 100%;
-      height: 8px;
-      cursor: pointer;
-      background: #e2e8f0;
-      border-radius: 9999px;
-    }
     input[type=range]::-webkit-slider-thumb {
-      height: 22px;
-      width: 22px;
+      -webkit-appearance: none;
+      width: 20px;
+      height: 20px;
       border-radius: 50%;
       background: #0284c7;
       cursor: pointer;
-      -webkit-appearance: none;
-      margin-top: -7px;
-      box-shadow: 0 4px 6px -1px rgba(2, 132, 199, 0.4);
-      transition: transform 0.15s ease;
+      box-shadow: 0 2px 4px rgba(2, 132, 199, 0.3);
+      transition: transform 0.1s ease;
     }
-    input[type=range]::-webkit-slider-thumb:hover {
-      transform: scale(1.15);
-      background: #0369a1;
+    input[type=range]::-webkit-slider-thumb:hover { transform: scale(1.15); }
+
+    /* Depth Selector Buttons */
+    .depth-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin-top: 8px;
     }
-    /* Smooth step fade in */
-    .fade-enter {
-      animation: fadeIn 0.25s ease-out forwards;
+    .depth-btn {
+      padding: 8px;
+      border: 1px solid #cbd5e1;
+      background: #ffffff;
+      border-radius: 8px;
+      font-size: 11px;
+      font-weight: 600;
+      color: #334155;
+      cursor: pointer;
+      transition: all 0.15s ease;
     }
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(6px); }
-      to { opacity: 1; transform: translateY(0); }
+    .depth-btn.active {
+      border-color: #0284c7;
+      background: #0284c7;
+      color: #ffffff;
+    }
+
+    /* Upgrade Grid */
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+    @media (max-width: 580px) { .grid-2 { grid-template-columns: 1fr; } }
+
+    .check-card {
+      border: 2px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 12px;
+      cursor: pointer;
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      background: #ffffff;
+      transition: all 0.15s ease;
+    }
+    .check-card:hover { border-color: #38bdf8; }
+    .check-card.checked { border-color: #0284c7; background: #f0f9ff; }
+    .check-card input {
+      margin-top: 2px;
+      width: 16px;
+      height: 16px;
+      accent-color: #0284c7;
+      cursor: pointer;
+    }
+    .check-content { flex: 1; }
+    .check-header {
+      display: flex;
+      justify-content: space-between;
+      font-size: 13px;
+      font-weight: 700;
+      color: #0f172a;
+    }
+    .check-price { color: #0284c7; font-weight: 800; font-size: 12px; }
+    .check-desc { font-size: 11px; color: #64748b; margin-top: 2px; }
+
+    /* Action Buttons */
+    .btn-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      margin-top: 20px;
+    }
+    .btn-primary {
+      background: #0284c7;
+      color: #ffffff;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.15s ease;
+      box-shadow: 0 4px 6px -1px rgba(2, 132, 199, 0.25);
+    }
+    .btn-primary:hover { background: #0369a1; }
+    .btn-full { width: 100%; justify-content: center; }
+    .btn-secondary {
+      background: transparent;
+      border: none;
+      color: #64748b;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      padding: 8px 14px;
+    }
+    .btn-secondary:hover { color: #0f172a; }
+
+    /* Step 3: Teaser & Lead Form */
+    .teaser-banner {
+      background: linear-gradient(135deg, #ecfdf5 0%, #f0fdf4 100%);
+      border: 1px solid #a7f3d0;
+      border-radius: 14px;
+      padding: 20px;
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    .teaser-tag {
+      display: inline-block;
+      background: #d1fae5;
+      color: #065f46;
+      font-size: 11px;
+      font-weight: 800;
+      padding: 4px 10px;
+      border-radius: 9999px;
+      margin-bottom: 8px;
+    }
+    .teaser-title { font-size: 18px; font-weight: 800; color: #064e3b; margin-bottom: 4px; }
+    .teaser-sub { font-size: 12px; color: #047857; margin-bottom: 14px; }
+    .teaser-box {
+      background: #ffffff;
+      border: 1px solid #6ee7b7;
+      border-radius: 10px;
+      padding: 12px;
+      max-width: 320px;
+      margin: 0 auto;
+      position: relative;
+      overflow: hidden;
+    }
+    .blurred-price {
+      font-size: 24px;
+      font-weight: 900;
+      color: #0369a1;
+      filter: blur(5px);
+      user-select: none;
+    }
+    .lock-overlay {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(255, 255, 255, 0.4);
+    }
+    .lock-pill {
+      background: #0f172a;
+      color: #38bdf8;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 4px 12px;
+      border-radius: 9999px;
+    }
+
+    /* Form Fields */
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+    @media (max-width: 580px) { .form-grid { grid-template-columns: 1fr; } }
+
+    .form-group { display: flex; flex-direction: column; gap: 4px; }
+    .form-group label { font-size: 12px; font-weight: 700; color: #334155; }
+    .form-group input, .form-group select {
+      padding: 10px 12px;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      font-size: 13px;
+      outline: none;
+      transition: border-color 0.15s ease;
+    }
+    .form-group input:focus, .form-group select:focus {
+      border-color: #0284c7;
+      box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.15);
+    }
+
+    /* Step 4: Final Breakdown */
+    .summary-card {
+      background: linear-gradient(135deg, #082f49 0%, #0369a1 100%);
+      color: #ffffff;
+      border-radius: 14px;
+      padding: 22px;
+      margin-bottom: 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+    }
+    @media (max-width: 580px) { .summary-card { flex-direction: column; align-items: flex-start; } }
+
+    .summary-left h4 { font-size: 12px; text-transform: uppercase; color: #7dd3fc; letter-spacing: 0.05em; }
+    .final-price { font-size: 32px; font-weight: 900; letter-spacing: -0.02em; margin: 4px 0; }
+    .summary-left p { font-size: 12px; color: #bae6fd; }
+    .financing-badge {
+      background: rgba(255, 255, 255, 0.15);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 10px;
+      padding: 10px 16px;
+      text-align: center;
+    }
+    .financing-val { font-size: 18px; font-weight: 900; }
+    .financing-sub { font-size: 10px; color: #bae6fd; display: block; }
+
+    .table-box {
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      overflow: hidden;
+      margin-bottom: 20px;
+    }
+    .table-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 16px;
+      border-bottom: 1px solid #f1f5f9;
+      font-size: 13px;
+    }
+    .table-row:last-child { border-bottom: none; }
+    .table-row:nth-child(even) { background: #f8fafc; }
+    .item-name { font-weight: 700; color: #0f172a; }
+    .item-sub { font-size: 11px; color: #64748b; display: block; }
+    .item-cost { font-weight: 800; color: #0f172a; }
+
+    .next-box {
+      background: #fffbeb;
+      border: 1px solid #fde68a;
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 16px;
+    }
+    .next-box h5 { font-size: 13px; font-weight: 800; color: #92400e; margin-bottom: 4px; }
+    .next-box p { font-size: 12px; color: #b45309; line-height: 1.4; }
+
+    /* Footer Toast */
+    .calc-footer {
+      background: #0f172a;
+      color: #94a3b8;
+      padding: 12px 20px;
+      font-size: 11px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .status-dot {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #38bdf8;
+      margin-right: 6px;
     }
   </style>
 </head>
-<body class="bg-slate-50 text-slate-800 font-sans antialiased p-2 sm:p-4 min-h-screen flex items-center justify-center">
+<body>
 
-  <!-- Main Calculator Card Container -->
-  <div class="w-full max-w-2xl bg-white rounded-2xl shadow-xl border border-slate-100 overflow-hidden" id="calculator-root">
+  <div class="calc-card">
     
-    <!-- Top Header Bar -->
-    <div class="bg-gradient-to-r from-ocean-900 via-ocean-800 to-ocean-700 px-6 py-5 text-white">
-      <div class="flex items-center justify-between">
-        <div class="flex items-center space-x-3">
-          <div class="w-10 h-10 rounded-xl bg-white/10 backdrop-blur flex items-center justify-center text-cyan-300">
-            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
-            </svg>
-          </div>
-          <div>
-            <h2 class="text-lg sm:text-xl font-bold tracking-tight">Instant Pool Cost Estimator</h2>
-            <p class="text-xs sm:text-sm text-cyan-100">Get a transparent, itemized estimate in 60 seconds</p>
-          </div>
+    <!-- Top Header -->
+    <div class="calc-header">
+      <div class="header-top">
+        <div>
+          <h2 class="header-title">Instant Pool Cost Estimator</h2>
+          <p class="header-sub">Transparent 2026 pricing in 60 seconds</p>
         </div>
-        <div class="hidden sm:flex items-center space-x-1 bg-white/10 px-3 py-1 rounded-full text-xs font-medium text-cyan-200">
-          <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-          <span>Live 2026 Material Rates</span>
-        </div>
+        <div class="badge-live">● Live Material Rates</div>
       </div>
 
-      <!-- Step Progress Bar -->
-      <div class="mt-5">
-        <div class="flex justify-between text-xs text-cyan-200 font-medium mb-1.5" id="step-indicators">
-          <span class="text-white font-semibold" id="label-step-1">1. Pool Type & Size</span>
-          <span class="opacity-60" id="label-step-2">2. Upgrades & Decking</span>
-          <span class="opacity-60" id="label-step-3">3. Unlock Estimate</span>
-        </div>
-        <div class="w-full bg-white/20 h-2 rounded-full overflow-hidden">
-          <div id="progress-bar" class="bg-gradient-to-r from-cyan-400 to-emerald-400 h-full w-1/3 transition-all duration-300"></div>
-        </div>
+      <!-- Step Labels & Progress -->
+      <div class="step-labels">
+        <span id="lbl-step-1" class="active">1. Size & Type</span>
+        <span id="lbl-step-2">2. Upgrades & Deck</span>
+        <span id="lbl-step-3">3. Unlock Estimate</span>
+      </div>
+      <div class="progress-track">
+        <div class="progress-fill" id="progress-bar"></div>
       </div>
     </div>
 
-    <!-- Interactive Form Body -->
-    <div class="p-5 sm:p-7">
-      
-      <!-- ============================================== -->
-      <!-- STEP 1: POOL TYPE, SIZE & SHAPE                -->
-      <!-- ============================================== -->
-      <div id="step-1" class="fade-enter space-y-6">
-        <div>
-          <label class="block text-sm font-bold text-slate-800 mb-2">Select Pool Construction Material</label>
-          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            <!-- Concrete / Gunite -->
-            <label class="pool-type-option cursor-pointer relative border-2 border-ocean-600 bg-ocean-50/50 rounded-xl p-3.5 flex flex-col justify-between transition hover:border-ocean-600">
-              <input type="radio" name="poolType" value="concrete" checked class="sr-only">
-              <div class="flex items-center justify-between mb-1">
-                <span class="font-bold text-slate-900 text-sm">Concrete / Gunite</span>
-                <span class="w-4 h-4 rounded-full border-2 border-ocean-600 bg-ocean-600 flex items-center justify-center text-white text-[10px]">✓</span>
-              </div>
-              <p class="text-xs text-slate-500 mb-2">100% custom shapes, lifetime durability.</p>
-              <span class="text-[11px] font-semibold text-ocean-700 bg-ocean-100/60 px-2 py-0.5 rounded w-fit">Most Popular</span>
-            </label>
+    <!-- Body Container -->
+    <div class="calc-body">
 
-            <!-- Fiberglass -->
-            <label class="pool-type-option cursor-pointer relative border-2 border-slate-200 bg-white rounded-xl p-3.5 flex flex-col justify-between transition hover:border-ocean-400">
-              <input type="radio" name="poolType" value="fiberglass" class="sr-only">
-              <div class="flex items-center justify-between mb-1">
-                <span class="font-bold text-slate-900 text-sm">Fiberglass</span>
-                <span class="w-4 h-4 rounded-full border-2 border-slate-300 flex items-center justify-center text-white text-[10px]"></span>
-              </div>
-              <p class="text-xs text-slate-500 mb-2">Smooth gelcoat, fastest 2-4 week install.</p>
-              <span class="text-[11px] font-semibold text-slate-600 bg-slate-100 px-2 py-0.5 rounded w-fit">Low Maintenance</span>
-            </label>
-
-            <!-- Vinyl Liner -->
-            <label class="pool-type-option cursor-pointer relative border-2 border-slate-200 bg-white rounded-xl p-3.5 flex flex-col justify-between transition hover:border-ocean-400">
-              <input type="radio" name="poolType" value="vinyl" class="sr-only">
-              <div class="flex items-center justify-between mb-1">
-                <span class="font-bold text-slate-900 text-sm">Vinyl Liner</span>
-                <span class="w-4 h-4 rounded-full border-2 border-slate-300 flex items-center justify-center text-white text-[10px]"></span>
-              </div>
-              <p class="text-xs text-slate-500 mb-2">Budget-friendly initial construction cost.</p>
-              <span class="text-[11px] font-semibold text-slate-600 bg-slate-100 px-2 py-0.5 rounded w-fit">Budget Friendly</span>
-            </label>
+      <!-- ============================================== -->
+      <!-- STEP 1: POOL TYPE & DIMENSIONS                 -->
+      <!-- ============================================== -->
+      <div id="step-1" class="step-pane active">
+        <span class="section-title">Select Construction Material</span>
+        <div class="grid-3">
+          
+          <div class="radio-card selected" onclick="selectPoolType('concrete', this)">
+            <input type="radio" name="poolType" value="concrete" checked>
+            <div class="radio-title">Concrete / Gunite</div>
+            <div class="radio-desc">100% custom shapes, lifetime durability.</div>
+            <span class="tag-pill">Most Popular</span>
           </div>
+
+          <div class="radio-card" onclick="selectPoolType('fiberglass', this)">
+            <input type="radio" name="poolType" value="fiberglass">
+            <div class="radio-title">Fiberglass</div>
+            <div class="radio-desc">Smooth gelcoat, 2-4 week install.</div>
+            <span class="tag-pill">Low Maintenance</span>
+          </div>
+
+          <div class="radio-card" onclick="selectPoolType('vinyl', this)">
+            <input type="radio" name="poolType" value="vinyl">
+            <div class="radio-title">Vinyl Liner</div>
+            <div class="radio-desc">Budget-friendly initial construction.</div>
+            <span class="tag-pill">Budget Friendly</span>
+          </div>
+
         </div>
 
-        <!-- Size Sliders -->
-        <div class="bg-slate-50 rounded-xl p-4 sm:p-5 border border-slate-200/70 space-y-4">
-          <div class="flex items-center justify-between">
-            <span class="text-sm font-bold text-slate-800">Dimensions & Water Surface</span>
-            <div class="text-right">
-              <span id="display-dimensions" class="text-base font-extrabold text-ocean-700">16' × 32'</span>
-              <span id="display-sqft" class="text-xs text-slate-500 block font-medium">(512 sq. ft · ~18,500 Gallons)</span>
-            </div>
+        <div class="control-box">
+          <div class="slider-header" style="margin-bottom: 12px;">
+            <strong style="color: #0f172a;">Pool Dimensions</strong>
+            <span style="font-weight: 800; color: #0284c7; font-size: 15px;" id="disp-dim">16' × 32' (512 sq ft)</span>
           </div>
 
-          <!-- Length Slider -->
-          <div>
-            <div class="flex justify-between text-xs text-slate-600 mb-1">
-              <span>Pool Length: <strong id="lbl-length" class="text-slate-900">32 ft</strong></span>
-              <span class="text-slate-400">20' to 44'</span>
+          <div class="slider-row">
+            <div class="slider-header">
+              <span>Length</span>
+              <span class="slider-val" id="val-len">32 ft</span>
             </div>
-            <input type="range" id="slider-length" min="20" max="44" step="2" value="32">
+            <input type="range" id="range-len" min="20" max="44" step="2" value="32">
           </div>
 
-          <!-- Width Slider -->
-          <div>
-            <div class="flex justify-between text-xs text-slate-600 mb-1">
-              <span>Pool Width: <strong id="lbl-width" class="text-slate-900">16 ft</strong></span>
-              <span class="text-slate-400">10' to 24'</span>
+          <div class="slider-row">
+            <div class="slider-header">
+              <span>Width</span>
+              <span class="slider-val" id="val-wid">16 ft</span>
             </div>
-            <input type="range" id="slider-width" min="10" max="24" step="2" value="16">
+            <input type="range" id="range-wid" min="10" max="24" step="2" value="16">
           </div>
 
-          <!-- Depth Selector -->
-          <div class="pt-2 border-t border-slate-200">
-            <label class="block text-xs font-semibold text-slate-600 mb-2">Average Pool Depth</label>
-            <div class="grid grid-cols-3 gap-2">
-              <button type="button" data-depth="shallow" class="depth-btn py-1.5 px-3 rounded-lg text-xs font-semibold border border-slate-300 bg-white text-slate-700 hover:bg-slate-100">Play Pool (3.5' – 5')</button>
-              <button type="button" data-depth="standard" class="depth-btn py-1.5 px-3 rounded-lg text-xs font-semibold border border-ocean-600 bg-ocean-50 text-ocean-700">Standard (3.5' – 6.5')</button>
-              <button type="button" data-depth="diving" class="depth-btn py-1.5 px-3 rounded-lg text-xs font-semibold border border-slate-300 bg-white text-slate-700 hover:bg-slate-100">Diving (3.5' – 8.5')</button>
+          <div style="margin-top: 14px; padding-top: 12px; border-top: 1px solid #e2e8f0;">
+            <span style="font-size: 12px; font-weight: 700; color: #475569; display: block; margin-bottom: 6px;">Average Depth</span>
+            <div class="depth-grid">
+              <button type="button" class="depth-btn" onclick="setDepth('shallow', this)">Play (3.5' – 5')</button>
+              <button type="button" class="depth-btn active" onclick="setDepth('standard', this)">Standard (3.5' – 6.5')</button>
+              <button type="button" class="depth-btn" onclick="setDepth('diving', this)">Diving (3.5' – 8.5')</button>
             </div>
           </div>
         </div>
 
-        <!-- Next Button Step 1 -->
-        <div class="flex justify-end pt-2">
-          <button type="button" id="btn-next-step-1" class="w-full sm:w-auto px-7 py-3 bg-ocean-600 hover:bg-ocean-700 active:scale-[0.99] text-white font-bold rounded-xl shadow-lg shadow-ocean-600/30 flex items-center justify-center space-x-2 transition">
-            <span>Continue to Upgrades & Decking</span>
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
-            </svg>
+        <div class="btn-row" style="justify-content: flex-end;">
+          <button type="button" class="btn-primary" onclick="goToStep(2)">
+            Continue to Upgrades & Decking →
           </button>
         </div>
       </div>
 
-
       <!-- ============================================== -->
-      <!-- STEP 2: UPGRADES, FEATURES & DECKING           -->
+      <!-- STEP 2: UPGRADES & PATIO                       -->
       <!-- ============================================== -->
-      <div id="step-2" class="fade-enter space-y-6 hidden">
-        <div>
-          <label class="block text-sm font-bold text-slate-800 mb-1">Popular Luxury Add-Ons & Features</label>
-          <p class="text-xs text-slate-500 mb-3">Select the features you'd like included in your dream oasis</p>
+      <div id="step-2" class="step-pane">
+        <span class="section-title">Select Dream Add-Ons & Features</span>
+        <p class="section-desc">Choose the custom features for your backyard oasis</p>
 
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3" id="upgrade-options">
-            
-            <!-- Spa / Hot Tub -->
-            <label class="upgrade-card cursor-pointer border-2 border-slate-200 rounded-xl p-3.5 flex items-start space-x-3 transition hover:border-ocean-300 bg-white">
-              <input type="checkbox" id="upg-spa" value="14500" class="mt-1 w-4 h-4 text-ocean-600 rounded border-slate-300 focus:ring-ocean-500">
-              <div class="flex-1">
-                <div class="flex justify-between items-center">
-                  <span class="text-sm font-bold text-slate-900">Spillover Heated Spa</span>
-                  <span class="text-xs font-bold text-ocean-700">+$14,500</span>
-                </div>
-                <p class="text-xs text-slate-500 mt-0.5">Built-in elevated gunite spa with 6 hydrotherapy jets & blower.</p>
+        <div class="grid-2">
+
+          <label class="check-card" onclick="toggleUpgrade('spa', this)">
+            <input type="checkbox" id="chk-spa">
+            <div class="check-content">
+              <div class="check-header">
+                <span>Spillover Heated Spa</span>
+                <span class="check-price">+$14,500</span>
               </div>
-            </label>
+              <div class="check-desc">Gunite spa with 6 hydrotherapy jets.</div>
+            </div>
+          </label>
 
-            <!-- Waterfalls & Sheer Descent -->
-            <label class="upgrade-card cursor-pointer border-2 border-slate-200 rounded-xl p-3.5 flex items-start space-x-3 transition hover:border-ocean-300 bg-white">
-              <input type="checkbox" id="upg-waterfall" value="4200" class="mt-1 w-4 h-4 text-ocean-600 rounded border-slate-300 focus:ring-ocean-500">
-              <div class="flex-1">
-                <div class="flex justify-between items-center">
-                  <span class="text-sm font-bold text-slate-900">Natural Rock Waterfall</span>
-                  <span class="text-xs font-bold text-ocean-700">+$4,200</span>
-                </div>
-                <p class="text-xs text-slate-500 mt-0.5">Stacked stone wall with dual sheer-descent cascade water curtains.</p>
+          <label class="check-card" onclick="toggleUpgrade('waterfall', this)">
+            <input type="checkbox" id="chk-waterfall">
+            <div class="check-content">
+              <div class="check-header">
+                <span>Rock Waterfall</span>
+                <span class="check-price">+$4,200</span>
               </div>
-            </label>
+              <div class="check-desc">Stacked stone with sheer-descent cascade.</div>
+            </div>
+          </label>
 
-            <!-- Automated Saltwater System -->
-            <label class="upgrade-card cursor-pointer border-2 border-slate-200 rounded-xl p-3.5 flex items-start space-x-3 transition hover:border-ocean-300 bg-white">
-              <input type="checkbox" id="upg-saltwater" value="2800" checked class="mt-1 w-4 h-4 text-ocean-600 rounded border-slate-300 focus:ring-ocean-500">
-              <div class="flex-1">
-                <div class="flex justify-between items-center">
-                  <span class="text-sm font-bold text-slate-900">Saltwater Chlorination</span>
-                  <span class="text-xs font-bold text-ocean-700">+$2,800</span>
-                </div>
-                <p class="text-xs text-slate-500 mt-0.5">Gentle on skin and eyes. Eliminates 80% of manual chlorine handling.</p>
+          <label class="check-card checked" onclick="toggleUpgrade('saltwater', this)">
+            <input type="checkbox" id="chk-saltwater" checked>
+            <div class="check-content">
+              <div class="check-header">
+                <span>Saltwater System</span>
+                <span class="check-price">+$2,800</span>
               </div>
-            </label>
+              <div class="check-desc">Gentle on skin, eliminates 80% manual chlorine.</div>
+            </div>
+          </label>
 
-            <!-- Smart Automation / App Control -->
-            <label class="upgrade-card cursor-pointer border-2 border-slate-200 rounded-xl p-3.5 flex items-start space-x-3 transition hover:border-ocean-300 bg-white">
-              <input type="checkbox" id="upg-smart" value="3200" checked class="mt-1 w-4 h-4 text-ocean-600 rounded border-slate-300 focus:ring-ocean-500">
-              <div class="flex-1">
-                <div class="flex justify-between items-center">
-                  <span class="text-sm font-bold text-slate-900">Smart App Automation</span>
-                  <span class="text-xs font-bold text-ocean-700">+$3,200</span>
-                </div>
-                <p class="text-xs text-slate-500 mt-0.5">Control heater, multi-color LED lights & pumps from your smartphone.</p>
+          <label class="check-card checked" onclick="toggleUpgrade('smart', this)">
+            <input type="checkbox" id="chk-smart" checked>
+            <div class="check-content">
+              <div class="check-header">
+                <span>Smart App Automation</span>
+                <span class="check-price">+$3,200</span>
               </div>
-            </label>
+              <div class="check-desc">Control heater and lights from your phone.</div>
+            </div>
+          </label>
 
-            <!-- Pool Heating Package -->
-            <label class="upgrade-card cursor-pointer border-2 border-slate-200 rounded-xl p-3.5 flex items-start space-x-3 transition hover:border-ocean-300 bg-white">
-              <input type="checkbox" id="upg-heater" value="4800" class="mt-1 w-4 h-4 text-ocean-600 rounded border-slate-300 focus:ring-ocean-500">
-              <div class="flex-1">
-                <div class="flex justify-between items-center">
-                  <span class="text-sm font-bold text-slate-900">High-Efficiency Gas Heater</span>
-                  <span class="text-xs font-bold text-ocean-700">+$4,800</span>
-                </div>
-                <p class="text-xs text-slate-500 mt-0.5">400k BTU heater to extend swimming season into spring and autumn.</p>
+          <label class="check-card" onclick="toggleUpgrade('heater', this)">
+            <input type="checkbox" id="chk-heater">
+            <div class="check-content">
+              <div class="check-header">
+                <span>Gas Heater</span>
+                <span class="check-price">+$4,800</span>
               </div>
-            </label>
+              <div class="check-desc">400k BTU high-efficiency heater.</div>
+            </div>
+          </label>
 
-            <!-- Multi-Color LED Lights -->
-            <label class="upgrade-card cursor-pointer border-2 border-slate-200 rounded-xl p-3.5 flex items-start space-x-3 transition hover:border-ocean-300 bg-white">
-              <input type="checkbox" id="upg-led" value="1800" checked class="mt-1 w-4 h-4 text-ocean-600 rounded border-slate-300 focus:ring-ocean-500">
-              <div class="flex-1">
-                <div class="flex justify-between items-center">
-                  <span class="text-sm font-bold text-slate-900">Color-Sync LED Light Show</span>
-                  <span class="text-xs font-bold text-ocean-700">+$1,800</span>
-                </div>
-                <p class="text-xs text-slate-500 mt-0.5">Dual underwater RGB spectrum luminaires with custom night presets.</p>
+          <label class="check-card checked" onclick="toggleUpgrade('led', this)">
+            <input type="checkbox" id="chk-led" checked>
+            <div class="check-content">
+              <div class="check-header">
+                <span>Multi-Color LED Lights</span>
+                <span class="check-price">+$1,800</span>
               </div>
-            </label>
+              <div class="check-desc">Underwater RGB spectrum night show.</div>
+            </div>
+          </label>
 
-          </div>
         </div>
 
-        <!-- Patio & Decking Calculator -->
-        <div class="bg-slate-50 rounded-xl p-4 sm:p-5 border border-slate-200/70 space-y-3">
-          <div class="flex items-center justify-between">
-            <span class="text-sm font-bold text-slate-800">Surrounding Decking & Patio</span>
-            <div class="text-right">
-              <span id="display-decking-cost" class="text-sm font-extrabold text-ocean-700">+$9,000</span>
-              <span id="display-decking-sqft" class="text-xs text-slate-500 block font-medium">500 sq. ft ($18/sq.ft)</span>
+        <div class="control-box">
+          <div class="slider-header" style="margin-bottom: 8px;">
+            <div>
+              <strong style="color: #0f172a;">Patio & Decking Area</strong>
+              <span style="font-size: 11px; color: #64748b; display: block;">Pavers & commercial base ($18/sq ft)</span>
             </div>
+            <span style="font-weight: 800; color: #0284c7; font-size: 15px;" id="disp-deck">+$9,000 (500 sq ft)</span>
           </div>
-          <div>
-            <div class="flex justify-between text-xs text-slate-600 mb-1">
-              <span>Decking Area: <strong id="lbl-decking-sqft" class="text-slate-900">500 sq ft</strong></span>
-              <span class="text-slate-400">0 to 1,200 sq ft</span>
-            </div>
-            <input type="range" id="slider-decking" min="0" max="1200" step="100" value="500">
-          </div>
-          <div class="flex items-center space-x-2 pt-1 text-xs text-slate-500">
-            <span class="inline-block w-2 h-2 rounded-full bg-ocean-500"></span>
-            <span>Includes premium slip-resistant pavers, excavation & commercial grade base prep.</span>
-          </div>
+          <input type="range" id="range-deck" min="0" max="1200" step="100" value="500">
         </div>
 
-        <!-- Navigation Buttons Step 2 -->
-        <div class="flex items-center justify-between pt-2">
-          <button type="button" id="btn-back-step-2" class="px-5 py-3 text-slate-600 hover:text-slate-900 font-semibold text-sm transition">
-            ← Back
-          </button>
-          <button type="button" id="btn-next-step-2" class="px-7 py-3 bg-ocean-600 hover:bg-ocean-700 active:scale-[0.99] text-white font-bold rounded-xl shadow-lg shadow-ocean-600/30 flex items-center space-x-2 transition">
-            <span>Calculate My Estimated Range</span>
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/>
-            </svg>
-          </button>
+        <div class="btn-row">
+          <button type="button" class="btn-secondary" onclick="goToStep(1)">← Back</button>
+          <button type="button" class="btn-primary" onclick="goToStep(3)">Calculate Estimated Range →</button>
         </div>
       </div>
 
-
       <!-- ============================================== -->
-      <!-- STEP 3: THE 2-STEP LEAD UNLOCK GATE            -->
+      <!-- STEP 3: LEAD UNLOCK GATE                       -->
       <!-- ============================================== -->
-      <div id="step-3" class="fade-enter space-y-5 hidden">
+      <div id="step-3" class="step-pane">
         
-        <!-- Calculation Complete Teaser Header -->
-        <div class="bg-gradient-to-br from-emerald-50 to-teal-50 border border-emerald-200/80 rounded-2xl p-4 sm:p-5 text-center">
-          <div class="inline-flex items-center space-x-1.5 bg-emerald-100 text-emerald-800 text-xs font-bold px-3 py-1 rounded-full mb-2">
-            <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
-              <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
-            </svg>
-            <span>Custom Estimate Computed Successfully</span>
-          </div>
-          <h3 class="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">Your Preliminary Estimate is Ready!</h3>
-          <p class="text-xs sm:text-sm text-slate-600 mt-1 max-w-md mx-auto">
-            Based on current material costs, permits, and excavation parameters in your area.
-          </p>
+        <div class="teaser-banner">
+          <span class="teaser-tag">✓ Custom Calculation Complete</span>
+          <h3 class="teaser-title">Your Preliminary Estimate is Ready!</h3>
+          <p class="teaser-sub">Calibrated to 2026 material and excavation costs in your area.</p>
 
-          <!-- Blurred Teaser Card -->
-          <div class="mt-4 bg-white/80 backdrop-blur rounded-xl p-4 border border-emerald-200 max-w-sm mx-auto shadow-sm">
-            <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider block mb-1">Estimated Project Range</span>
-            <div class="relative py-1">
-              <span id="teaser-price-blurred" class="text-2xl sm:text-3xl font-black text-ocean-800 tracking-tight filter blur-md select-none">$68,500 – $84,200</span>
-              <div class="absolute inset-0 flex items-center justify-center">
-                <span class="bg-ocean-900 text-cyan-200 text-xs font-bold px-3 py-1 rounded-full shadow-md">
-                  🔒 Enter Details Below to Unlock
-                </span>
-              </div>
+          <div class="teaser-box">
+            <div class="blurred-price" id="teaser-price">$68,400 – $82,900</div>
+            <div class="lock-overlay">
+              <span class="lock-pill">🔒 Enter Details Below to Unlock</span>
             </div>
-            <span class="text-[11px] text-slate-400 mt-1 block">Includes pool shell, equipment, deck & excavation</span>
           </div>
         </div>
 
-        <!-- Lead Form -->
-        <form id="lead-form" class="space-y-4">
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-            <div>
-              <label class="block text-xs font-bold text-slate-700 mb-1">Full Name <span class="text-rose-500">*</span></label>
-              <input type="text" id="lead-name" required placeholder="John Miller" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-ocean-500 focus:border-ocean-500 outline-none transition">
+        <form id="lead-form" onsubmit="handleLeadSubmit(event)">
+          <div class="form-grid">
+            <div class="form-group">
+              <label>Full Name *</label>
+              <input type="text" id="lead-name" required placeholder="John Miller">
             </div>
-            <div>
-              <label class="block text-xs font-bold text-slate-700 mb-1">Mobile Phone (For SMS Estimate) <span class="text-rose-500">*</span></label>
-              <input type="tel" id="lead-phone" required placeholder="(555) 234-5678" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-ocean-500 focus:border-ocean-500 outline-none transition">
-            </div>
-          </div>
-
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-            <div>
-              <label class="block text-xs font-bold text-slate-700 mb-1">Email Address <span class="text-rose-500">*</span></label>
-              <input type="email" id="lead-email" required placeholder="john@example.com" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-ocean-500 focus:border-ocean-500 outline-none transition">
-            </div>
-            <div>
-              <label class="block text-xs font-bold text-slate-700 mb-1">Installation Zip Code <span class="text-rose-500">*</span></label>
-              <input type="text" id="lead-zip" required placeholder="75001" maxlength="10" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-ocean-500 focus:border-ocean-500 outline-none transition">
+            <div class="form-group">
+              <label>Mobile Phone (For SMS Estimate) *</label>
+              <input type="tel" id="lead-phone" required placeholder="(555) 234-5678">
             </div>
           </div>
 
-          <!-- Installation Timeline -->
-          <div>
-            <label class="block text-xs font-bold text-slate-700 mb-1">Target Installation Timeframe</label>
-            <select id="lead-timeline" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-ocean-500 focus:border-ocean-500 outline-none transition bg-white text-slate-700">
-              <option value="immediate">As soon as permits allow (Next 1–2 months)</option>
-              <option value="spring_summer" selected>In time for Summer (Next 3–6 months)</option>
-              <option value="future">Planning / Budgeting for next year</option>
+          <div class="form-grid">
+            <div class="form-group">
+              <label>Email Address *</label>
+              <input type="email" id="lead-email" required placeholder="john@example.com">
+            </div>
+            <div class="form-group">
+              <label>Installation Zip Code *</label>
+              <input type="text" id="lead-zip" required placeholder="75001" maxlength="10">
+            </div>
+          </div>
+
+          <div class="form-group" style="margin-bottom: 18px;">
+            <label>Target Timeline</label>
+            <select id="lead-timeline">
+              <option value="immediate">Next 1–2 months</option>
+              <option value="spring_summer" selected>Ready for Summer (Next 3–6 months)</option>
+              <option value="planning">Budgeting for next year</option>
             </select>
           </div>
 
-          <!-- Submit CTA Button -->
-          <div class="pt-2">
-            <button type="submit" id="btn-submit-lead" class="w-full py-3.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 active:scale-[0.99] text-white font-extrabold text-base rounded-xl shadow-lg shadow-emerald-600/30 flex items-center justify-center space-x-2 transition">
-              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
-              </svg>
-              <span>Unlock My Instant Itemized Quote</span>
-            </button>
-            <p class="text-[11px] text-slate-400 text-center mt-2 flex items-center justify-center space-x-1">
-              <svg class="w-3.5 h-3.5 text-slate-400 inline" fill="currentColor" viewBox="0 0 20 20">
-                <path fill-rule="evenodd" d="M2.166 4.999A11.954 11.954 0 0010 1.944 11.954 11.954 0 0017.834 5c.11.65.166 1.32.166 2.001 0 5.225-3.34 9.67-8 11.317C5.34 16.67 2 12.225 2 7c0-.682.057-1.35.166-2.001zm11.541 3.708a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
-              </svg>
-              <span>Zero obligation. We will never sell your information.</span>
-            </p>
-          </div>
+          <button type="submit" class="btn-primary btn-full" style="padding: 14px;">
+            Unlock My Instant Itemized Quote
+          </button>
         </form>
 
-        <div class="flex justify-start">
-          <button type="button" id="btn-back-step-3" class="text-xs font-semibold text-slate-500 hover:text-slate-800">
-            ← Change dimensions or upgrades
-          </button>
+        <div style="text-align: center; margin-top: 12px;">
+          <button type="button" class="btn-secondary" onclick="goToStep(2)">← Change dimensions or upgrades</button>
         </div>
       </div>
 
-
       <!-- ============================================== -->
-      <!-- STEP 4: FINAL ITEMIZED BREAKDOWN & NEXT STEPS   -->
+      <!-- STEP 4: FINAL ITEMIZED BREAKDOWN               -->
       <!-- ============================================== -->
-      <div id="step-4" class="fade-enter space-y-6 hidden">
+      <div id="step-4" class="step-pane">
         
-        <!-- Success Banner -->
-        <div class="bg-ocean-900 text-white rounded-2xl p-6 relative overflow-hidden shadow-xl">
-          <div class="absolute -right-10 -bottom-10 w-40 h-40 bg-cyan-500/20 rounded-full blur-2xl"></div>
-          
-          <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+        <div class="summary-card">
+          <div class="summary-left">
+            <h4>Estimate For <span id="res-name">Homeowner</span></h4>
+            <div class="final-price" id="res-price">$68,400 – $82,900</div>
+            <p>Includes pool shell, equipment package, deck & excavation.</p>
+          </div>
+          <div class="financing-badge">
+            <span class="financing-sub">Est. Monthly Financing</span>
+            <span class="financing-val" id="res-financing">~$495 / mo</span>
+            <span class="financing-sub" style="font-size: 9px; opacity: 0.8;">8.9% APR · 15 Yrs</span>
+          </div>
+        </div>
+
+        <div class="table-box">
+          <div class="table-row">
             <div>
-              <span class="text-xs font-bold uppercase tracking-wider text-cyan-300">Itemized Estimate For <span id="final-lead-name">Homeowner</span></span>
-              <div class="text-3xl sm:text-4xl font-black text-white mt-1" id="final-price-range">
-                $68,400 – $82,900
-              </div>
-              <p class="text-xs text-cyan-100 mt-1">Includes complete excavation, plumbing, equipment & setup.</p>
+              <span class="item-name" id="row-base-title">Gunite Concrete Pool Shell (16' × 32')</span>
+              <span class="item-sub">Excavation, rebar cage, shotcrete & plaster finish</span>
             </div>
-            
-            <div class="bg-white/10 backdrop-blur border border-white/20 rounded-xl px-4 py-2.5 text-center w-full sm:w-auto">
-              <span class="text-[11px] font-medium text-cyan-200 block uppercase">Est. Monthly Financing</span>
-              <span class="text-lg font-black text-white" id="final-monthly-financing">~$495 / mo</span>
-              <span class="text-[10px] text-cyan-300 block">Based on 8.9% APR · 15 Yrs</span>
+            <span class="item-cost" id="row-base-cost">$52,500</span>
+          </div>
+
+          <div class="table-row">
+            <div>
+              <span class="item-name">Commercial Equipment Package</span>
+              <span class="item-sub">Variable speed pump, cartridge filter, automated valves</span>
             </div>
+            <span class="item-cost">$8,500</span>
+          </div>
+
+          <div class="table-row" id="row-upgrades">
+            <div>
+              <span class="item-name">Selected Upgrades</span>
+              <span class="item-sub" id="row-upgrades-list">Saltwater, Smart Controls, LED Lights</span>
+            </div>
+            <span class="item-cost" id="row-upgrades-cost">+$7,800</span>
+          </div>
+
+          <div class="table-row">
+            <div>
+              <span class="item-name" id="row-deck-title">Patio & Decking Surround (500 sq ft)</span>
+              <span class="item-sub">Interlocking pavers & commercial crushed base</span>
+            </div>
+            <span class="item-cost" id="row-deck-cost">+$9,000</span>
           </div>
         </div>
 
-        <!-- Itemized Cost Breakdown Table -->
-        <div class="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
-          <div class="bg-slate-50 px-4 py-2.5 border-b border-slate-200 flex justify-between items-center">
-            <span class="text-xs font-bold text-slate-700 uppercase tracking-wider">Itemized Breakdown</span>
-            <span class="text-xs text-slate-500 font-medium">Preliminary Pricing</span>
-          </div>
-          <div class="divide-y divide-slate-100 text-xs sm:text-sm" id="breakdown-table">
-            <div class="p-3.5 flex justify-between items-center">
-              <div>
-                <span class="font-bold text-slate-800" id="item-base-title">Gunite Concrete Pool Shell (16' × 32')</span>
-                <span class="block text-xs text-slate-500">Includes excavation, rebar cage, shotcrete & plaster finish</span>
-              </div>
-              <span class="font-bold text-slate-900" id="item-base-cost">$52,500</span>
-            </div>
-            <div class="p-3.5 flex justify-between items-center">
-              <div>
-                <span class="font-bold text-slate-800">Commercial Grade Equipment Package</span>
-                <span class="block text-xs text-slate-500">Variable speed pump, cartridge filter, automated valves & plumbing</span>
-              </div>
-              <span class="font-bold text-slate-900" id="item-equipment-cost">$8,500</span>
-            </div>
-            <div class="p-3.5 flex justify-between items-center" id="row-upgrades">
-              <div>
-                <span class="font-bold text-slate-800" id="item-upgrades-title">Selected Upgrades & Add-ons</span>
-                <span class="block text-xs text-slate-500" id="item-upgrades-list">Spa, Saltwater, LED Lights, Smart Automation</span>
-              </div>
-              <span class="font-bold text-slate-900" id="item-upgrades-cost">+$22,300</span>
-            </div>
-            <div class="p-3.5 flex justify-between items-center">
-              <div>
-                <span class="font-bold text-slate-800" id="item-decking-title">Patio & Decking Surround (500 sq ft)</span>
-                <span class="block text-xs text-slate-500">Excavation, commercial crushed base & interlocking stone pavers</span>
-              </div>
-              <span class="font-bold text-slate-900" id="item-decking-cost">+$9,000</span>
-            </div>
+        <div class="next-box">
+          <h5>★ Next Step: Claim Your Free 3D Yard Scan & Site Feasibility</h5>
+          <p>A licensed pool designer will generate a photo-realistic 3D render of this exact pool placed in your actual backyard, plus confirm utility and soil depth.</p>
+          <div style="margin-top: 12px; display: flex; gap: 10px; flex-wrap: wrap;">
+            <a href="tel:5553928821" class="btn-primary" style="text-decoration: none; padding: 10px 18px; font-size: 13px;">
+              Call Designer: (555) 392-8821
+            </a>
+            <button type="button" onclick="window.print()" class="btn-secondary" style="border: 1px solid #cbd5e1; border-radius: 8px;">
+              Print / Save PDF
+            </button>
           </div>
         </div>
 
-        <!-- Next Step Action Box -->
-        <div class="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-xl p-4 sm:p-5">
-          <div class="flex items-start space-x-3">
-            <div class="w-9 h-9 rounded-full bg-amber-500/20 text-amber-700 flex items-center justify-center shrink-0 font-black text-sm">
-              ★
-            </div>
-            <div class="flex-1">
-              <h4 class="text-sm font-bold text-slate-900">Next Step: Claim Your Free 3D Yard Scan & Site Feasibility</h4>
-              <p class="text-xs text-slate-600 mt-1">
-                A licensed pool designer will generate a photo-realistic 3D render of this exact pool placed in your actual backyard, plus confirm utility and soil depth.
-              </p>
-              
-              <div class="mt-3.5 flex flex-col sm:flex-row items-center gap-2.5">
-                <a href="tel:5553928821" class="w-full sm:w-auto px-5 py-2.5 bg-ocean-600 hover:bg-ocean-700 text-white font-bold text-xs sm:text-sm rounded-lg shadow-md flex items-center justify-center space-x-2 transition">
-                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/>
-                  </svg>
-                  <span>Call Designer Directly: (555) 392-8821</span>
-                </a>
-                <button type="button" onclick="window.print()" class="w-full sm:w-auto px-4 py-2.5 bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 font-semibold text-xs sm:text-sm rounded-lg flex items-center justify-center space-x-1.5 transition">
-                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
-                  </svg>
-                  <span>Print / Save PDF</span>
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Start Over Option -->
-        <div class="text-center pt-2">
-          <button type="button" id="btn-restart" class="text-xs text-slate-400 hover:text-slate-600 underline">
-            Start a new estimate with different dimensions
-          </button>
+        <div style="text-align: center;">
+          <button type="button" class="btn-secondary" onclick="goToStep(1)">Start a new estimate with different dimensions</button>
         </div>
 
       </div>
 
     </div>
 
-    <!-- Live Demonstration Simulation Toast for Contractor Pitch -->
-    <div id="contractor-demo-badge" class="bg-slate-900 border-t border-slate-800 px-4 py-2.5 text-slate-300 text-xs flex flex-col sm:flex-row items-center justify-between gap-2">
-      <div class="flex items-center space-x-2">
-        <span class="inline-block w-2 h-2 rounded-full bg-cyan-400 animate-ping"></span>
-        <span class="font-medium">Lead Routing Status: <strong class="text-cyan-300" id="badge-webhook-status">Active (Instant Email & SMS Alert Ready)</strong></span>
+    <!-- Live Toast Bar -->
+    <div class="calc-footer">
+      <div>
+        <span class="status-dot"></span>
+        <span id="footer-status">Lead Routing: <strong>Active (Instant Email & SMS Ready)</strong></span>
       </div>
-      <span class="text-[11px] text-slate-400">Embeddable on any site in 60 seconds</span>
+      <span>Embeddable in 60s</span>
     </div>
 
   </div>
 
-
-  <!-- =================================================== -->
-  <!-- JAVASCRIPT CALCULATOR ENGINE                        -->
-  <!-- =================================================== -->
   <script>
-    (function() {
-      // Pricing baseline constants (2026 contractor averages)
-      const BASE_PRICES = {
-        concrete: { basePerSqFt: 105, label: "Gunite Concrete Shell" },
-        fiberglass: { basePerSqFt: 92, label: "Premium Fiberglass Shell" },
-        vinyl: { basePerSqFt: 68, label: "Heavy Duty Vinyl Liner" }
-      };
+    const BASE_RATES = { concrete: 105, fiberglass: 92, vinyl: 68 };
+    const DEPTH_MULTS = { shallow: 0.95, standard: 1.0, diving: 1.15 };
+    const EQUIPMENT_FEE = 8500;
+    const DECKING_SQFT_RATE = 18;
 
-      const DEPTH_MULTIPLIERS = {
-        shallow: 0.95,
-        standard: 1.0,
-        diving: 1.15
-      };
+    const state = {
+      step: 1,
+      poolType: 'concrete',
+      length: 32,
+      width: 16,
+      depth: 'standard',
+      deckingSqFt: 500,
+      upgrades: {
+        spa: false,
+        waterfall: false,
+        saltwater: true,
+        smart: true,
+        heater: false,
+        led: true
+      },
+      lead: { name: '', phone: '', email: '', zip: '', timeline: 'spring_summer' }
+    };
 
-      const EQUIPMENT_FEE = 8500; // Pumps, filters, standard plumbing, electrical hookup
-      const DECKING_RATE_PER_SQFT = 18; // Pavers + excavation + base prep
+    function selectPoolType(type, el) {
+      document.querySelectorAll('.radio-card').forEach(c => c.classList.remove('selected'));
+      el.classList.add('selected');
+      state.poolType = type;
+      recalc();
+    }
 
-      // State Object
-      const state = {
-        step: 1,
-        poolType: 'concrete',
-        length: 32,
-        width: 16,
-        depth: 'standard',
-        deckingSqFt: 500,
-        upgrades: {
-          spa: false,
-          waterfall: false,
-          saltwater: true,
-          smart: true,
-          heater: false,
-          led: true
-        },
-        lead: {
-          name: '',
-          phone: '',
-          email: '',
-          zip: '',
-          timeline: 'spring_summer'
-        }
-      };
+    function setDepth(depth, el) {
+      document.querySelectorAll('.depth-btn').forEach(b => b.classList.remove('active'));
+      el.classList.add('active');
+      state.depth = depth;
+      recalc();
+    }
 
-      // DOM Elements
-      const sliderLength = document.getElementById('slider-length');
-      const sliderWidth = document.getElementById('slider-width');
-      const sliderDecking = document.getElementById('slider-decking');
-      const lblLength = document.getElementById('lbl-length');
-      const lblWidth = document.getElementById('lbl-width');
-      const lblDeckingSqft = document.getElementById('lbl-decking-sqft');
-      const displayDimensions = document.getElementById('display-dimensions');
-      const displaySqft = document.getElementById('display-sqft');
-      const displayDeckingCost = document.getElementById('display-decking-cost');
-      const displayDeckingSqft = document.getElementById('display-decking-sqft');
-      const teaserPriceBlurred = document.getElementById('teaser-price-blurred');
+    function toggleUpgrade(key, el) {
+      const chk = document.getElementById('chk-' + key);
+      setTimeout(() => {
+        state.upgrades[key] = chk.checked;
+        if (chk.checked) el.classList.add('checked');
+        else el.classList.remove('checked');
+        recalc();
+      }, 10);
+    }
 
-      // Steps
-      const step1 = document.getElementById('step-1');
-      const step2 = document.getElementById('step-2');
-      const step3 = document.getElementById('step-3');
-      const step4 = document.getElementById('step-4');
-      const progressBar = document.getElementById('progress-bar');
+    function recalc() {
+      const sqFt = state.length * state.width;
+      const shellCost = sqFt * BASE_RATES[state.poolType] * DEPTH_MULTS[state.depth];
+      
+      let upgTotal = 0;
+      const names = [];
+      if (state.upgrades.spa) { upgTotal += 14500; names.push('Spillover Spa'); }
+      if (state.upgrades.waterfall) { upgTotal += 4200; names.push('Rock Waterfall'); }
+      if (state.upgrades.saltwater) { upgTotal += 2800; names.push('Saltwater System'); }
+      if (state.upgrades.smart) { upgTotal += 3200; names.push('Smart Controls'); }
+      if (state.upgrades.heater) { upgTotal += 4800; names.push('Gas Heater'); }
+      if (state.upgrades.led) { upgTotal += 1800; names.push('LED Lights'); }
 
-      // Format currency
-      function formatUSD(num) {
-        return '$' + Math.round(num).toLocaleString('en-US');
+      const deckCost = state.deckingSqFt * DECKING_SQFT_RATE;
+      const subtotal = shellCost + EQUIPMENT_FEE + upgTotal + deckCost;
+      const low = Math.round(subtotal * 0.94 / 100) * 100;
+      const high = Math.round(subtotal * 1.12 / 100) * 100;
+
+      const r = 0.089 / 12;
+      const n = 180;
+      const monthly = Math.round((subtotal * (r * Math.pow(1 + r, n))) / (Math.pow(1 + r, n) - 1));
+
+      // Update Step 1 Displays
+      document.getElementById('val-len').textContent = state.length + ' ft';
+      document.getElementById('val-wid').textContent = state.width + ' ft';
+      document.getElementById('disp-dim').textContent = `${state.length}' × ${state.width}' (${sqFt} sq ft)`;
+
+      // Step 2 Displays
+      document.getElementById('disp-deck').textContent = `+$${deckCost.toLocaleString()} (${state.deckingSqFt} sq ft)`;
+
+      // Step 3 Displays
+      document.getElementById('teaser-price').textContent = `$${low.toLocaleString()} – $${high.toLocaleString()}`;
+
+      // Step 4 Displays
+      document.getElementById('res-price').textContent = `$${low.toLocaleString()} – $${high.toLocaleString()}`;
+      document.getElementById('res-financing').textContent = `~$${monthly} / mo`;
+      document.getElementById('row-base-title').textContent = `${state.poolType.toUpperCase()} Pool Shell (${state.length}' × ${state.width}')`;
+      document.getElementById('row-base-cost').textContent = '$' + Math.round(shellCost).toLocaleString();
+      document.getElementById('row-deck-title').textContent = `Patio & Decking Surround (${state.deckingSqFt} sq ft)`;
+      document.getElementById('row-deck-cost').textContent = '+$' + deckCost.toLocaleString();
+      document.getElementById('row-upgrades-list').textContent = names.length ? names.join(', ') : 'None selected';
+      document.getElementById('row-upgrades-cost').textContent = '+$' + upgTotal.toLocaleString();
+    }
+
+    function sendHeight() {
+      if (window.parent) {
+        const height = document.querySelector('.calc-card').scrollHeight + 32;
+        window.parent.postMessage({ frameHeight: height }, '*');
       }
+    }
 
-      // Main calculation formula
-      function computeEstimate() {
-        const sqFt = state.length * state.width;
-        const gallons = Math.round(sqFt * 5.2 * 7.48); // Approx gallonage
-        const baseRate = BASE_PRICES[state.poolType].basePerSqFt;
-        const depthMult = DEPTH_MULTIPLIERS[state.depth];
-        
-        // Base pool shell cost
-        const shellCost = sqFt * baseRate * depthMult;
-        
-        // Sum upgrades
-        let upgradesCost = 0;
-        const selectedUpgradeNames = [];
-        if (state.upgrades.spa) { upgradesCost += 14500; selectedUpgradeNames.push('Spillover Spa'); }
-        if (state.upgrades.waterfall) { upgradesCost += 4200; selectedUpgradeNames.push('Rock Waterfall'); }
-        if (state.upgrades.saltwater) { upgradesCost += 2800; selectedUpgradeNames.push('Saltwater System'); }
-        if (state.upgrades.smart) { upgradesCost += 3200; selectedUpgradeNames.push('Smart App Controls'); }
-        if (state.upgrades.heater) { upgradesCost += 4800; selectedUpgradeNames.push('Gas Heater'); }
-        if (state.upgrades.led) { upgradesCost += 1800; selectedUpgradeNames.push('LED Color Lights'); }
+    // Auto-notify parent whenever step or size changes
+    window.addEventListener('load', sendHeight);
+    window.addEventListener('resize', sendHeight);
 
-        // Decking cost
-        const deckingCost = state.deckingSqFt * DECKING_RATE_PER_SQFT;
+    function goToStep(s) {
+      state.step = s;
+      document.querySelectorAll('.step-pane').forEach(p => p.classList.remove('active'));
+      document.getElementById('step-' + s).classList.add('active');
 
-        // Subtotal (Point estimate)
-        const subtotal = shellCost + EQUIPMENT_FEE + upgradesCost + deckingCost;
+      const bar = document.getElementById('progress-bar');
+      const l1 = document.getElementById('lbl-step-1');
+      const l2 = document.getElementById('lbl-step-2');
+      const l3 = document.getElementById('lbl-step-3');
 
-        // Realistic range bracket (-6% to +12% for excavation/soil variances)
-        const lowEst = Math.round(subtotal * 0.94 / 100) * 100;
-        const highEst = Math.round(subtotal * 1.12 / 100) * 100;
-        
-        // Approx monthly financing (8.9% interest, 180 months)
-        const r = 0.089 / 12;
-        const n = 180;
-        const monthlyFinancing = Math.round((subtotal * (r * Math.pow(1 + r, n))) / (Math.pow(1 + r, n) - 1));
+      [l1, l2, l3].forEach(l => l.classList.remove('active'));
 
-        return {
-          sqFt,
-          gallons,
-          shellCost,
-          equipmentFee: EQUIPMENT_FEE,
-          upgradesCost,
-          selectedUpgradeNames,
-          deckingCost,
-          subtotal,
-          lowEst,
-          highEst,
-          monthlyFinancing
-        };
-      }
+      if (s === 1) { bar.style.width = '33%'; l1.classList.add('active'); }
+      if (s === 2) { bar.style.width = '66%'; l2.classList.add('active'); }
+      if (s === 3) { bar.style.width = '90%'; l3.classList.add('active'); }
+      if (s === 4) { bar.style.width = '100%'; l3.classList.add('active'); }
+      
+      setTimeout(sendHeight, 50);
+    }
 
-      // Update UI displays
-      function refreshUI() {
-        lblLength.textContent = state.length + ' ft';
-        lblWidth.textContent = state.width + ' ft';
-        lblDeckingSqft.textContent = state.deckingSqFt + ' sq ft';
+    function handleLeadSubmit(e) {
+      e.preventDefault();
+      state.lead.name = document.getElementById('lead-name').value.trim();
+      state.lead.phone = document.getElementById('lead-phone').value.trim();
+      state.lead.email = document.getElementById('lead-email').value.trim();
+      state.lead.zip = document.getElementById('lead-zip').value.trim();
 
-        const est = computeEstimate();
-        displayDimensions.textContent = `${state.length}' × ${state.width}'`;
-        displaySqft.textContent = `(${est.sqFt} sq. ft · ~${est.gallons.toLocaleString()} Gallons)`;
+      document.getElementById('res-name').textContent = state.lead.name;
+      document.getElementById('footer-status').innerHTML = `Lead Captured for <strong>${state.lead.name} (${state.lead.phone})</strong>!`;
+      
+      goToStep(4);
+    }
 
-        displayDeckingCost.textContent = `+${formatUSD(est.deckingCost)}`;
-        displayDeckingSqft.textContent = `${state.deckingSqFt} sq. ft ($${DECKING_RATE_PER_SQFT}/sq.ft)`;
+    document.getElementById('range-len').addEventListener('input', e => { state.length = +e.target.value; recalc(); });
+    document.getElementById('range-wid').addEventListener('input', e => { state.width = +e.target.value; recalc(); });
+    document.getElementById('range-deck').addEventListener('input', e => { state.deckingSqFt = +e.target.value; recalc(); });
 
-        teaserPriceBlurred.textContent = `${formatUSD(est.lowEst)} – ${formatUSD(est.highEst)}`;
-      }
-
-      // Step navigation logic
-      function goToStep(s) {
-        state.step = s;
-        [step1, step2, step3, step4].forEach(stepEl => stepEl.classList.add('hidden'));
-
-        const label1 = document.getElementById('label-step-1');
-        const label2 = document.getElementById('label-step-2');
-        const label3 = document.getElementById('label-step-3');
-
-        if (s === 1) {
-          step1.classList.remove('hidden');
-          progressBar.style.width = '33%';
-          label1.className = 'text-white font-semibold';
-          label2.className = 'opacity-60';
-          label3.className = 'opacity-60';
-        } else if (s === 2) {
-          step2.classList.remove('hidden');
-          progressBar.style.width = '66%';
-          label1.className = 'text-cyan-200';
-          label2.className = 'text-white font-semibold';
-          label3.className = 'opacity-60';
-        } else if (s === 3) {
-          step3.classList.remove('hidden');
-          progressBar.style.width = '90%';
-          label1.className = 'text-cyan-200';
-          label2.className = 'text-cyan-200';
-          label3.className = 'text-white font-semibold';
-        } else if (s === 4) {
-          step4.classList.remove('hidden');
-          progressBar.style.width = '100%';
-          populateFinalSummary();
-        }
-      }
-
-      // Populate final Step 4 Table
-      function populateFinalSummary() {
-        const est = computeEstimate();
-        document.getElementById('final-lead-name').textContent = state.lead.name || 'Valued Homeowner';
-        document.getElementById('final-price-range').textContent = `${formatUSD(est.lowEst)} – ${formatUSD(est.highEst)}`;
-        document.getElementById('final-monthly-financing').textContent = `~$${est.monthlyFinancing} / mo`;
-
-        document.getElementById('item-base-title').textContent = `${BASE_PRICES[state.poolType].label} (${state.length}' × ${state.width}')`;
-        document.getElementById('item-base-cost').textContent = formatUSD(est.shellCost);
-        document.getElementById('item-equipment-cost').textContent = formatUSD(est.equipmentFee);
-
-        const rowUpgrades = document.getElementById('row-upgrades');
-        if (est.upgradesCost > 0) {
-          rowUpgrades.style.display = 'flex';
-          document.getElementById('item-upgrades-list').textContent = est.selectedUpgradeNames.join(', ');
-          document.getElementById('item-upgrades-cost').textContent = `+${formatUSD(est.upgradesCost)}`;
-        } else {
-          rowUpgrades.style.display = 'none';
-        }
-
-        document.getElementById('item-decking-title').textContent = `Patio & Decking Surround (${state.deckingSqFt} sq ft)`;
-        document.getElementById('item-decking-cost').textContent = `+${formatUSD(est.deckingCost)}`;
-      }
-
-      // Attach Event Listeners
-      sliderLength.addEventListener('input', (e) => {
-        state.length = parseInt(e.target.value, 10);
-        refreshUI();
-      });
-
-      sliderWidth.addEventListener('input', (e) => {
-        state.width = parseInt(e.target.value, 10);
-        refreshUI();
-      });
-
-      sliderDecking.addEventListener('input', (e) => {
-        state.deckingSqFt = parseInt(e.target.value, 10);
-        refreshUI();
-      });
-
-      // Pool Type selector
-      document.querySelectorAll('.pool-type-option').forEach(card => {
-        card.addEventListener('click', () => {
-          document.querySelectorAll('.pool-type-option').forEach(c => {
-            c.classList.remove('border-ocean-600', 'bg-ocean-50/50');
-            c.classList.add('border-slate-200', 'bg-white');
-            c.querySelector('.rounded-full').className = 'w-4 h-4 rounded-full border-2 border-slate-300 flex items-center justify-center text-white text-[10px]';
-            c.querySelector('.rounded-full').textContent = '';
-          });
-          card.classList.add('border-ocean-600', 'bg-ocean-50/50');
-          card.classList.remove('border-slate-200', 'bg-white');
-          const circle = card.querySelector('.rounded-full');
-          circle.className = 'w-4 h-4 rounded-full border-2 border-ocean-600 bg-ocean-600 flex items-center justify-center text-white text-[10px]';
-          circle.textContent = '✓';
-          state.poolType = card.querySelector('input').value;
-          refreshUI();
-        });
-      });
-
-      // Depth Buttons
-      document.querySelectorAll('.depth-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-          document.querySelectorAll('.depth-btn').forEach(b => {
-            b.className = 'depth-btn py-1.5 px-3 rounded-lg text-xs font-semibold border border-slate-300 bg-white text-slate-700 hover:bg-slate-100';
-          });
-          btn.className = 'depth-btn py-1.5 px-3 rounded-lg text-xs font-semibold border border-ocean-600 bg-ocean-50 text-ocean-700';
-          state.depth = btn.getAttribute('data-depth');
-          refreshUI();
-        });
-      });
-
-      // Upgrade checkboxes
-      const upgradeIds = {
-        'upg-spa': 'spa',
-        'upg-waterfall': 'waterfall',
-        'upg-saltwater': 'saltwater',
-        'upg-smart': 'smart',
-        'upg-heater': 'heater',
-        'upg-led': 'led'
-      };
-
-      Object.entries(upgradeIds).forEach(([elemId, key]) => {
-        const el = document.getElementById(elemId);
-        if (el) {
-          el.addEventListener('change', (e) => {
-            state.upgrades[key] = e.target.checked;
-            refreshUI();
-          });
-        }
-      });
-
-      // Navigation clicks
-      document.getElementById('btn-next-step-1').addEventListener('click', () => goToStep(2));
-      document.getElementById('btn-back-step-2').addEventListener('click', () => goToStep(1));
-      document.getElementById('btn-next-step-2').addEventListener('click', () => goToStep(3));
-      document.getElementById('btn-back-step-3').addEventListener('click', () => goToStep(2));
-
-      // Handle Lead Form Submission (Step 3 -> Step 4)
-      const leadForm = document.getElementById('lead-form');
-      leadForm.addEventListener('submit', (e) => {
-        e.preventDefault();
-        
-        state.lead.name = document.getElementById('lead-name').value.trim();
-        state.lead.phone = document.getElementById('lead-phone').value.trim();
-        state.lead.email = document.getElementById('lead-email').value.trim();
-        state.lead.zip = document.getElementById('lead-zip').value.trim();
-        state.lead.timeline = document.getElementById('lead-timeline').value;
-
-        // Button feedback
-        const submitBtn = document.getElementById('btn-submit-lead');
-        const originalContent = submitBtn.innerHTML;
-        submitBtn.disabled = true;
-        submitBtn.innerHTML = `
-          <svg class="animate-spin -ml-1 mr-2 h-5 w-5 text-white" fill="none" viewBox="0 0 24 24">
-            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
-          </svg>
-          <span>Unlocking Itemized Details...</span>
-        `;
-
-        // Simulate or dispatch lead payload
-        const leadPayload = {
-          ...state.lead,
-          estimateDetails: computeEstimate(),
-          timestamp: new Date().toISOString()
-        };
-
-        // If webhook param or config is present, dispatch fetch here
-        console.log('[LEAD DISPATCHED TO CONTRACTOR]:', leadPayload);
-
-        setTimeout(() => {
-          submitBtn.disabled = false;
-          submitBtn.innerHTML = originalContent;
-          goToStep(4);
-          
-          // Flash toast alert on bottom bar
-          const badge = document.getElementById('badge-webhook-status');
-          badge.textContent = `Lead Captured for ${state.lead.name} (${state.lead.phone})!`;
-          badge.className = 'text-emerald-400 font-bold';
-        }, 800);
-      });
-
-      // Restart Button
-      document.getElementById('btn-restart').addEventListener('click', () => {
-        goToStep(1);
-      });
-
-      // Initial calculation run
-      refreshUI();
-    })();
+    recalc();
   </script>
 </body>
 </html>
