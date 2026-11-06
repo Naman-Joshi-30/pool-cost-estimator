@@ -868,9 +868,69 @@
       }
     }
 
-    // Auto-notify parent whenever step, DOM or size changes
-    window.addEventListener('load', () => { setTimeout(sendHeight, 50); });
-    window.addEventListener('resize', sendHeight);
+    // Presaved Client Profiles Database
+    const CLIENT_PROFILES = {
+      lonestar: {
+        name: "Lone Star Custom Pools",
+        phone: "(214) 555-0199",
+        theme: "amber"
+      },
+      bluewave: {
+        name: "BlueWave Pools & Spas",
+        phone: "(407) 555-8821",
+        theme: "cyan"
+      },
+      desert: {
+        name: "Desert Oasis Pools",
+        phone: "(480) 555-3412",
+        theme: "emerald"
+      },
+      premier: {
+        name: "Premier Luxury Pools",
+        phone: "(713) 555-9200",
+        theme: "navy"
+      }
+    };
+
+    // Read clean short key like ?c=lonestar
+    const urlParams = new URLSearchParams(window.location.search);
+    const clientKey = (urlParams.get('c') || urlParams.get('client') || '').toLowerCase();
+    const profile = CLIENT_PROFILES[clientKey] || {};
+
+    const customCompany = profile.name || urlParams.get('company') || urlParams.get('name');
+    const customPhone = profile.phone || urlParams.get('phone');
+    const customTheme = profile.theme || urlParams.get('theme') || urlParams.get('color');
+
+    if (customCompany) {
+      document.querySelector('.header-title').textContent = `${customCompany} Estimator`;
+      document.querySelector('.header-sub').textContent = `Instant transparent pricing for ${customCompany} clients`;
+      const badgeLive = document.querySelector('.badge-live');
+      if (badgeLive) badgeLive.textContent = `● Verified for ${customCompany}`;
+    }
+
+    if (customPhone) {
+      const callBtn = document.querySelector('a[href^="tel:"]');
+      if (callBtn) {
+        callBtn.href = `tel:${customPhone.replace(/[^0-9]/g, '')}`;
+        callBtn.innerHTML = `Call Designer: ${customPhone}`;
+      }
+    }
+
+    // Theme color palettes
+    const THEMES = {
+      emerald: { grad: 'linear-gradient(135deg, #064e3b 0%, #059669 100%)', primary: '#059669' },
+      amber: { grad: 'linear-gradient(135deg, #78350f 0%, #d97706 100%)', primary: '#d97706' },
+      navy: { grad: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)', primary: '#2563eb' },
+      cyan: { grad: 'linear-gradient(135deg, #082f49 0%, #0284c7 100%)', primary: '#0284c7' }
+    };
+
+    if (customTheme && THEMES[customTheme.toLowerCase()]) {
+      const t = THEMES[customTheme.toLowerCase()];
+      const headerEl = document.querySelector('.calc-header');
+      if (headerEl) headerEl.style.background = t.grad;
+      document.querySelectorAll('.btn-primary').forEach(b => b.style.background = t.primary);
+      document.querySelectorAll('.final-price, .slider-val').forEach(el => el.style.color = t.primary);
+    }
 
     if (window.ResizeObserver) {
       const ro = new ResizeObserver(() => { sendHeight(); });

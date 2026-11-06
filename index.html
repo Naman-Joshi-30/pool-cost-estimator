@@ -148,10 +148,63 @@
         <iframe id="estimator-frame" src="widget.html" class="w-full max-w-2xl border-0 transition-all duration-150" style="min-height: 850px;" scrolling="no" title="Instant Pool Cost Estimator"></iframe>
       </div>
       <script>
+        // Presaved Client Profiles Database
+        const CLIENT_PROFILES = {
+          lonestar: {
+            name: "Lone Star Custom Pools",
+            city: "Dallas-Fort Worth, TX",
+            phone: "(214) 555-0199"
+          },
+          bluewave: {
+            name: "BlueWave Pools & Spas",
+            city: "Orlando, FL",
+            phone: "(407) 555-8821"
+          },
+          desert: {
+            name: "Desert Oasis Pools",
+            city: "Scottsdale, AZ",
+            phone: "(480) 555-3412"
+          },
+          premier: {
+            name: "Premier Luxury Pools",
+            city: "Houston, TX",
+            phone: "(713) 555-9200"
+          }
+        };
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const clientKey = (urlParams.get('c') || urlParams.get('client') || '').toLowerCase();
+        const profile = CLIENT_PROFILES[clientKey] || {};
+
+        const comp = profile.name || urlParams.get('company') || urlParams.get('name');
+        const phone = profile.phone || urlParams.get('phone');
+        const city = profile.city || urlParams.get('city');
+
+        // Pass short key through to iframe
+        const frame = document.getElementById('estimator-frame');
+        if (frame && window.location.search) {
+          frame.src = 'widget.html' + window.location.search;
+        }
+
+        if (comp) {
+          document.querySelectorAll('.brand-name-dynamic').forEach(el => el.textContent = comp.toUpperCase());
+          document.title = `${comp} | Premier Inground Pool Builders`;
+        }
+        if (phone) {
+          document.querySelectorAll('a[href^="tel:"]').forEach(a => {
+            a.href = `tel:${phone.replace(/[^0-9]/g, '')}`;
+            const span = a.querySelector('span');
+            if (span) span.textContent = phone;
+          });
+        }
+        if (city) {
+          const pill = document.querySelector('.hero-city-pill');
+          if (pill) pill.textContent = `🏆 Voted #1 Custom Inground Pool Builder in ${city}`;
+        }
+
         // Auto-expand iframe to fit calculator height dynamically without cropping
         window.addEventListener('message', function(event) {
           if (event.data && typeof event.data.frameHeight === 'number') {
-            const frame = document.getElementById('estimator-frame');
             if (frame) {
               frame.style.height = Math.max(event.data.frameHeight, 750) + 'px';
             }
