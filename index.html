@@ -144,16 +144,16 @@
       </div>
 
       <!-- Iframe Container Embedding the Widget -->
-      <div class="w-full bg-white rounded-2xl shadow-xl overflow-hidden border border-slate-200">
-        <iframe id="estimator-frame" src="widget.html" class="w-full border-0 transition-all duration-200" style="min-height: 720px; overflow: hidden;" scrolling="no" title="Instant Pool Cost Estimator"></iframe>
+      <div class="w-full flex justify-center">
+        <iframe id="estimator-frame" src="widget.html" class="w-full max-w-2xl border-0 transition-all duration-150" style="min-height: 850px;" scrolling="no" title="Instant Pool Cost Estimator"></iframe>
       </div>
       <script>
-        // Auto-expand iframe to fit calculator height without inner scrollbars
+        // Auto-expand iframe to fit calculator height dynamically without cropping
         window.addEventListener('message', function(event) {
-          if (event.data && event.data.frameHeight) {
+          if (event.data && typeof event.data.frameHeight === 'number') {
             const frame = document.getElementById('estimator-frame');
             if (frame) {
-              frame.style.height = (event.data.frameHeight + 10) + 'px';
+              frame.style.height = Math.max(event.data.frameHeight, 750) + 'px';
             }
           }
         });
