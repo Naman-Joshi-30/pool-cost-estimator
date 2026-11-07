@@ -148,141 +148,10 @@
         <iframe id="estimator-frame" src="widget.html" class="w-full max-w-2xl border-0 transition-all duration-150" style="min-height: 850px;" scrolling="no" title="Instant Pool Cost Estimator"></iframe>
       </div>
       <script>
-        // Presaved Client Profiles Database
-        const CLIENT_PROFILES = {
-          lonestar: {
-            name: "Lone Star Custom Pools",
-            city: "Dallas-Fort Worth, TX",
-            phone: "(214) 555-0199",
-            theme: "amber"
-          },
-          bluewave: {
-            name: "BlueWave Pools & Spas",
-            city: "Orlando, FL",
-            phone: "(407) 555-8821",
-            theme: "cyan"
-          },
-          desert: {
-            name: "Desert Oasis Pools",
-            city: "Scottsdale, AZ",
-            phone: "(480) 555-3412",
-            theme: "emerald"
-          },
-          premier: {
-            name: "Premier Luxury Pools",
-            city: "Houston, TX",
-            phone: "(713) 555-9200",
-            theme: "navy"
-          }
-        };
-
-        const urlParams = new URLSearchParams(window.location.search);
-        const clientKey = (urlParams.get('c') || urlParams.get('client') || '').toLowerCase();
-        const profile = CLIENT_PROFILES[clientKey] || {};
-
-        const comp = profile.name || urlParams.get('company') || urlParams.get('name');
-        const phone = profile.phone || urlParams.get('phone');
-        const city = profile.city || urlParams.get('city');
-        const theme = profile.theme || urlParams.get('theme') || urlParams.get('color');
-
-        // Pass query through to iframe
+        // Forward URL query parameters to iframe immediately
         const frame = document.getElementById('estimator-frame');
         if (frame && window.location.search) {
           frame.src = 'widget.html' + window.location.search;
-        }
-
-        // Dynamic branding updates
-        if (comp) {
-          document.querySelectorAll('.brand-name-dynamic').forEach(el => el.textContent = comp.toUpperCase());
-          document.title = `${comp} | Premier Inground Pool Builders`;
-        }
-        if (phone) {
-          document.querySelectorAll('a[href^="tel:"]').forEach(a => {
-            a.href = `tel:${phone.replace(/[^0-9]/g, '')}`;
-            const span = a.querySelector('span');
-            if (span) span.textContent = phone;
-          });
-        }
-        if (city) {
-          const heroPill = document.querySelector('.hero-city-pill');
-          if (heroPill) heroPill.textContent = `🏆 Voted #1 Custom Inground Pool Builder in ${city}`;
-          const announcePill = document.querySelector('.announcement-city-pill');
-          if (announcePill) announcePill.textContent = `Now Booking Spring & Summer 2026 Excavations in ${city} · Reserve Your 3D Yard Scan Today`;
-        }
-
-        // Full Page Theme Color System
-        const LANDING_THEMES = {
-          amber: {
-            primary: '#d97706',
-            hover: '#b45309',
-            dark: '#78350f',
-            veryDark: '#451a03',
-            light: '#fef3c7',
-            textLight: '#92400e',
-            accent: '#fde68a',
-            gradText: 'linear-gradient(to right, #d97706, #f59e0b)'
-          },
-          emerald: {
-            primary: '#059669',
-            hover: '#047857',
-            dark: '#064e3b',
-            veryDark: '#022c22',
-            light: '#d1fae5',
-            textLight: '#065f46',
-            accent: '#a7f3d0',
-            gradText: 'linear-gradient(to right, #059669, #10b981)'
-          },
-          navy: {
-            primary: '#2563eb',
-            hover: '#1d4ed8',
-            dark: '#1e3a8a',
-            veryDark: '#0f172a',
-            light: '#dbeafe',
-            textLight: '#1e40af',
-            accent: '#93c5fd',
-            gradText: 'linear-gradient(to right, #2563eb, #3b82f6)'
-          },
-          cyan: {
-            primary: '#0284c7',
-            hover: '#0369a1',
-            dark: '#0c4a6e',
-            veryDark: '#082f49',
-            light: '#e0f2fe',
-            textLight: '#075985',
-            accent: '#a5f3fc',
-            gradText: 'linear-gradient(to right, #0284c7, #06b6d4)'
-          }
-        };
-
-        if (theme && LANDING_THEMES[theme.toLowerCase()]) {
-          const t = LANDING_THEMES[theme.toLowerCase()];
-          const styleEl = document.createElement('style');
-          styleEl.id = 'theme-override';
-          styleEl.innerHTML = `
-            /* Primary CTA buttons */
-            .bg-brand-600, a[href="#estimator"].bg-brand-600 { background-color: ${t.primary} !important; }
-            .hover\\:bg-brand-700:hover, a[href="#estimator"]:hover { background-color: ${t.hover} !important; }
-            
-            /* Dark sections & Top Bar */
-            .bg-brand-950 { background-color: ${t.veryDark} !important; }
-            .bg-gradient-to-tr.from-brand-700.to-brand-500 { background-image: linear-gradient(to top right, ${t.dark}, ${t.primary}) !important; }
-            
-            /* Text colors & Badges */
-            .text-brand-600 { color: ${t.primary} !important; }
-            .text-brand-800 { color: ${t.textLight} !important; }
-            .bg-brand-100 { background-color: ${t.light} !important; }
-            .bg-brand-50 { background-color: ${t.light} !important; }
-            .border-brand-200 { border-color: ${t.primary} !important; }
-            
-            /* Hero Headline gradient */
-            .bg-gradient-to-r.from-brand-600.to-cyan-500 { background-image: ${t.gradText} !important; }
-            
-            /* Table & Bottom CTA */
-            .text-cyan-300, .text-cyan-200, .text-cyan-100 { color: ${t.accent} !important; }
-            .bg-cyan-400 { background-color: ${t.primary} !important; color: #ffffff !important; }
-            .bg-gradient-to-r.from-brand-950 { background-image: linear-gradient(to right, ${t.veryDark}, ${t.dark}, ${t.primary}) !important; }
-          `;
-          document.head.appendChild(styleEl);
         }
 
         // Auto-expand iframe to fit calculator height dynamically without cropping
@@ -564,5 +433,147 @@
     </a>
   </div>
 
+  <!-- Dynamic Branding & Full-Page Reskin Engine (Executes after complete DOM load) -->
+  <script>
+    (function initBranding() {
+      const CLIENT_PROFILES = {
+        lonestar: {
+          name: "Lone Star Custom Pools",
+          city: "Dallas-Fort Worth, TX",
+          phone: "(214) 555-0199",
+          theme: "amber"
+        },
+        bluewave: {
+          name: "BlueWave Pools & Spas",
+          city: "Orlando, FL",
+          phone: "(407) 555-8821",
+          theme: "cyan"
+        },
+        desert: {
+          name: "Desert Oasis Pools",
+          city: "Scottsdale, AZ",
+          phone: "(480) 555-3412",
+          theme: "emerald"
+        },
+        premier: {
+          name: "Premier Luxury Pools",
+          city: "Houston, TX",
+          phone: "(713) 555-9200",
+          theme: "navy"
+        }
+      };
+
+      const urlParams = new URLSearchParams(window.location.search);
+      const clientKey = (urlParams.get('c') || urlParams.get('client') || '').toLowerCase();
+      const profile = CLIENT_PROFILES[clientKey] || {};
+
+      const comp = profile.name || urlParams.get('company') || urlParams.get('name');
+      const phone = profile.phone || urlParams.get('phone');
+      const city = profile.city || urlParams.get('city');
+      const theme = profile.theme || urlParams.get('theme') || urlParams.get('color');
+
+      // Update all brand name elements across the entire page (header, table, footer, title)
+      if (comp) {
+        document.querySelectorAll('.brand-name-dynamic').forEach(el => {
+          el.textContent = comp.toUpperCase();
+        });
+        document.title = `${comp} | Premier Inground Pool Builders`;
+      }
+
+      // Update all phone links & text occurrences everywhere on the page
+      if (phone) {
+        document.querySelectorAll('a[href^="tel:"]').forEach(a => {
+          a.href = `tel:${phone.replace(/[^0-9]/g, '')}`;
+          // Replaces text whether inside a span or direct text
+          a.innerHTML = a.innerHTML.replace(/\(?555\)?[\s.-]*392[\s.-]*8821/g, phone);
+        });
+      }
+
+      // Update city badges across the entire page
+      if (city) {
+        document.querySelectorAll('.hero-city-pill').forEach(el => {
+          el.textContent = `🏆 Voted #1 Custom Inground Pool Builder in ${city}`;
+        });
+        document.querySelectorAll('.announcement-city-pill').forEach(el => {
+          el.textContent = `Now Booking Spring & Summer 2026 Excavations in ${city} · Reserve Your 3D Yard Scan Today`;
+        });
+      }
+
+      // Full Page Theme Color System
+      const LANDING_THEMES = {
+        amber: {
+          primary: '#d97706',
+          hover: '#b45309',
+          dark: '#78350f',
+          veryDark: '#451a03',
+          light: '#fef3c7',
+          textLight: '#92400e',
+          accent: '#fde68a',
+          gradText: 'linear-gradient(to right, #d97706, #f59e0b)'
+        },
+        emerald: {
+          primary: '#059669',
+          hover: '#047857',
+          dark: '#064e3b',
+          veryDark: '#022c22',
+          light: '#d1fae5',
+          textLight: '#065f46',
+          accent: '#a7f3d0',
+          gradText: 'linear-gradient(to right, #059669, #10b981)'
+        },
+        navy: {
+          primary: '#2563eb',
+          hover: '#1d4ed8',
+          dark: '#1e3a8a',
+          veryDark: '#0f172a',
+          light: '#dbeafe',
+          textLight: '#1e40af',
+          accent: '#93c5fd',
+          gradText: 'linear-gradient(to right, #2563eb, #3b82f6)'
+        },
+        cyan: {
+          primary: '#0284c7',
+          hover: '#0369a1',
+          dark: '#0c4a6e',
+          veryDark: '#082f49',
+          light: '#e0f2fe',
+          textLight: '#075985',
+          accent: '#a5f3fc',
+          gradText: 'linear-gradient(to right, #0284c7, #06b6d4)'
+        }
+      };
+
+      if (theme && LANDING_THEMES[theme.toLowerCase()]) {
+        const t = LANDING_THEMES[theme.toLowerCase()];
+        const styleEl = document.createElement('style');
+        styleEl.id = 'theme-override';
+        styleEl.innerHTML = `
+          /* Primary CTA buttons */
+          .bg-brand-600, a[href="#estimator"].bg-brand-600 { background-color: ${t.primary} !important; }
+          .hover\\:bg-brand-700:hover, a[href="#estimator"]:hover { background-color: ${t.hover} !important; }
+          
+          /* Dark sections & Top Bar */
+          .bg-brand-950 { background-color: ${t.veryDark} !important; }
+          .bg-gradient-to-tr.from-brand-700.to-brand-500 { background-image: linear-gradient(to top right, ${t.dark}, ${t.primary}) !important; }
+          
+          /* Text colors & Badges */
+          .text-brand-600 { color: ${t.primary} !important; }
+          .text-brand-800 { color: ${t.textLight} !important; }
+          .bg-brand-100 { background-color: ${t.light} !important; }
+          .bg-brand-50 { background-color: ${t.light} !important; }
+          .border-brand-200 { border-color: ${t.primary} !important; }
+          
+          /* Hero Headline gradient */
+          .bg-gradient-to-r.from-brand-600.to-cyan-500 { background-image: ${t.gradText} !important; }
+          
+          /* Table & Bottom CTA */
+          .text-cyan-300, .text-cyan-200, .text-cyan-100 { color: ${t.accent} !important; }
+          .bg-cyan-400 { background-color: ${t.primary} !important; color: #ffffff !important; }
+          .bg-gradient-to-r.from-brand-950 { background-image: linear-gradient(to right, ${t.veryDark}, ${t.dark}, ${t.primary}) !important; }
+        `;
+        document.head.appendChild(styleEl);
+      }
+    })();
+  </script>
 </body>
 </html>
