@@ -337,7 +337,7 @@
     }
     @media (max-width: 580px) { .form-grid { grid-template-columns: 1fr; } }
 
-    .form-group { display: flex; flex-direction: column; gap: 4px; }
+    .form-group { display: flex; flex-direction: column; gap: 4px; position: relative; }
     .form-group label { font-size: 12px; font-weight: 700; color: #334155; }
     .form-group input, .form-group select {
       padding: 10px 12px;
@@ -345,11 +345,43 @@
       border-radius: 8px;
       font-size: 13px;
       outline: none;
-      transition: border-color 0.15s ease;
+      transition: all 0.15s ease;
+      background: #ffffff;
     }
     .form-group input:focus, .form-group select:focus {
       border-color: #0284c7;
       box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.15);
+    }
+    /* Input Validation States */
+    .form-group.has-error input {
+      border-color: #ef4444 !important;
+      background: #fef2f2 !important;
+    }
+    .form-group.has-error input:focus {
+      box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.2) !important;
+    }
+    .form-group.has-success input {
+      border-color: #10b981 !important;
+      background: #f0fdf4 !important;
+    }
+    .field-error {
+      font-size: 11px;
+      color: #dc2626;
+      font-weight: 600;
+      margin-top: 2px;
+      display: none;
+    }
+    .form-group.has-error .field-error {
+      display: block;
+      animation: fadeIn 0.15s ease-out;
+    }
+    @keyframes formShake {
+      0%, 100% { transform: translateX(0); }
+      20%, 60% { transform: translateX(-6px); }
+      40%, 80% { transform: translateX(6px); }
+    }
+    .shake-error {
+      animation: formShake 0.35s ease-in-out;
     }
 
     /* Step 4: Final Breakdown */
@@ -638,31 +670,38 @@
           </div>
         </div>
 
-        <form id="lead-form" onsubmit="handleLeadSubmit(event)">
+        <form id="lead-form" onsubmit="handleLeadSubmit(event)" novalidate>
+          <!-- Spam Honeypot (Invisible to humans, catches automated bots) -->
+          <input type="text" id="lead-hp" name="website_url_hp" tabindex="-1" autocomplete="off" style="position: absolute; left: -9999px; opacity: 0; pointer-events: none;" aria-hidden="true">
+
           <div class="form-grid">
-            <div class="form-group">
-              <label>Full Name *</label>
-              <input type="text" id="lead-name" required placeholder="John Miller">
+            <div class="form-group" id="fg-name">
+              <label for="lead-name">Full Name *</label>
+              <input type="text" id="lead-name" required placeholder="John Miller" autocomplete="name" inputmode="text">
+              <span class="field-error" id="err-name">Please enter your first & last name (min. 3 characters).</span>
             </div>
-            <div class="form-group">
-              <label>Mobile Phone (For SMS Estimate) *</label>
-              <input type="tel" id="lead-phone" required placeholder="(555) 234-5678">
+            <div class="form-group" id="fg-phone">
+              <label for="lead-phone">Mobile Phone (For SMS Estimate) *</label>
+              <input type="tel" id="lead-phone" required placeholder="(555) 234-5678" autocomplete="tel" inputmode="tel" maxlength="14">
+              <span class="field-error" id="err-phone">Please enter a valid 10-digit mobile number.</span>
             </div>
           </div>
 
           <div class="form-grid">
-            <div class="form-group">
-              <label>Email Address *</label>
-              <input type="email" id="lead-email" required placeholder="john@example.com">
+            <div class="form-group" id="fg-email">
+              <label for="lead-email">Email Address *</label>
+              <input type="email" id="lead-email" required placeholder="john@example.com" autocomplete="email" inputmode="email">
+              <span class="field-error" id="err-email">Please enter a valid email address (e.g. name@domain.com).</span>
             </div>
-            <div class="form-group">
-              <label>Installation Zip Code *</label>
-              <input type="text" id="lead-zip" required placeholder="75001" maxlength="10">
+            <div class="form-group" id="fg-zip">
+              <label for="lead-zip">Installation Zip Code *</label>
+              <input type="text" id="lead-zip" required placeholder="75001" maxlength="5" autocomplete="postal-code" inputmode="numeric">
+              <span class="field-error" id="err-zip">Please enter a valid 5-digit US zip code.</span>
             </div>
           </div>
 
           <div class="form-group" style="margin-bottom: 18px;">
-            <label>Target Timeline</label>
+            <label for="lead-timeline">Target Timeline</label>
             <select id="lead-timeline">
               <option value="immediate">Next 1–2 months</option>
               <option value="spring_summer" selected>Ready for Summer (Next 3–6 months)</option>
@@ -670,7 +709,7 @@
             </select>
           </div>
 
-          <button type="submit" class="btn-primary btn-full" style="padding: 14px;">
+          <button type="submit" id="btn-submit-lead" class="btn-primary btn-full" style="padding: 14px;">
             Unlock My Instant Itemized Quote
           </button>
         </form>
@@ -840,20 +879,20 @@
       document.getElementById('disp-dim').textContent = `${state.length}' × ${state.width}' (${sqFt} sq ft)`;
 
       // Step 2 Displays
-      document.getElementById('disp-deck').textContent = `+$${deckCost.toLocaleString()} (${state.deckingSqFt} sq ft)`;
+      document.getElementById('disp-deck').textContent = `+$${deckCost.toLocaleString('en-US')} (${state.deckingSqFt} sq ft)`;
 
       // Step 3 Displays
-      document.getElementById('teaser-price').textContent = `$${low.toLocaleString()} – $${high.toLocaleString()}`;
+      document.getElementById('teaser-price').textContent = `$${low.toLocaleString('en-US')} – $${high.toLocaleString('en-US')}`;
 
       // Step 4 Displays
-      document.getElementById('res-price').textContent = `$${low.toLocaleString()} – $${high.toLocaleString()}`;
+      document.getElementById('res-price').textContent = `$${low.toLocaleString('en-US')} – $${high.toLocaleString('en-US')}`;
       document.getElementById('res-financing').textContent = `~$${monthly} / mo`;
       document.getElementById('row-base-title').textContent = `${state.poolType.toUpperCase()} Pool Shell (${state.length}' × ${state.width}')`;
-      document.getElementById('row-base-cost').textContent = '$' + Math.round(shellCost).toLocaleString();
+      document.getElementById('row-base-cost').textContent = '$' + Math.round(shellCost).toLocaleString('en-US');
       document.getElementById('row-deck-title').textContent = `Patio & Decking Surround (${state.deckingSqFt} sq ft)`;
-      document.getElementById('row-deck-cost').textContent = '+$' + deckCost.toLocaleString();
+      document.getElementById('row-deck-cost').textContent = '+$' + deckCost.toLocaleString('en-US');
       document.getElementById('row-upgrades-list').textContent = names.length ? names.join(', ') : 'None selected';
-      document.getElementById('row-upgrades-cost').textContent = '+$' + upgTotal.toLocaleString();
+      document.getElementById('row-upgrades-cost').textContent = '+$' + upgTotal.toLocaleString('en-US');
     }
 
     function sendHeight() {
@@ -957,12 +996,251 @@
       setTimeout(sendHeight, 50);
     }
 
+    // ========================================================
+    // ADVANCED LEAD VALIDATION & INPUT HARDENING ENGINE
+    // ========================================================
+    const BANNED_EMAIL_DOMAINS = [
+      'test.com', 'fake.com', 'example.com', 'asdf.com', '123.com',
+      'sample.com', 'none.com', 'mailinator.com', 'tempmail.com',
+      'yopmail.com', 'trashmail.com', 'guerrillamail.com'
+    ];
+
+    const BANNED_EMAIL_USERS = ['test', 'fake', 'asdf', 'admin', 'user', 'none', 'null', 'nobody', 'noone'];
+
+    function validateName(raw) {
+      const name = raw.trim();
+      if (!name) return "Full name is required.";
+      if (name.length < 3) return "Name must be at least 3 characters.";
+      if (name.length > 60) return "Name is too long.";
+      if (!/^[a-zA-Z\s'.-]+$/.test(name)) return "Name can only contain letters, spaces, hyphens, and apostrophes.";
+      if (/^(.)\1+$/i.test(name.replace(/\s/g, ''))) return "Please enter a valid human name.";
+      const lower = name.toLowerCase();
+      if (['asdf', 'qwer', 'test', 'fake', 'none', 'unknown', 'nobody', 'abc', 'xyz', 'john doe'].includes(lower)) {
+        return "Please enter your actual first & last name.";
+      }
+      return null;
+    }
+
+    function validatePhone(raw) {
+      let d = raw.replace(/\D/g, '');
+      if (d.length === 11 && d[0] === '1') d = d.slice(1);
+      if (!d) return "Phone number is required for SMS estimate.";
+      if (d.length !== 10) return "Please enter a complete 10-digit mobile number.";
+      if (['0', '1'].includes(d[0])) return "Area code cannot start with 0 or 1.";
+      if (['0', '1'].includes(d[3])) return "Invalid mobile exchange code.";
+      if (/^(\d)\1{9}$/.test(d)) return "Please enter a valid, active phone number.";
+      if (['0123456789', '1234567890', '9876543210', '0987654321'].includes(d)) {
+        return "Sequential dummy numbers are not permitted.";
+      }
+      if (d.startsWith('555555') || d === '1231231234' || d === '1234561234') {
+        return "Please enter a valid, active phone number.";
+      }
+      return null;
+    }
+
+    function validateEmail(raw) {
+      const email = raw.trim().toLowerCase();
+      if (!email) return "Email address is required.";
+      const emailRegex = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)+$/;
+      if (!emailRegex.test(email)) return "Please enter a valid email format (e.g. name@domain.com).";
+      
+      const parts = email.split('@');
+      const user = parts[0];
+      const domain = parts[1];
+      
+      if (!domain || !domain.includes('.')) return "Email domain must include a valid extension.";
+      const tld = domain.split('.').pop();
+      if (tld.length < 2 || !/^[a-zA-Z]+$/.test(tld)) return "Email has an invalid top-level domain.";
+      
+      if (BANNED_EMAIL_DOMAINS.includes(domain)) {
+        return "Please enter a valid personal or work email (temporary domains not accepted).";
+      }
+      if (BANNED_EMAIL_USERS.includes(user) && ['gmail.com', 'yahoo.com', 'hotmail.com', 'outlook.com'].includes(domain)) {
+        return "Please enter your actual personal or business email.";
+      }
+      return null;
+    }
+
+    function validateZip(raw) {
+      const d = raw.replace(/\D/g, '');
+      if (!d) return "Installation zip code is required.";
+      if (d.length !== 5) return "Please enter a valid 5-digit US zip code.";
+      if (/^(\d)\1{4}$/.test(d) || d === '00000') return "Please enter a valid geographic zip code.";
+      return null;
+    }
+
+    function formatPhoneMask(val) {
+      const d = val.replace(/\D/g, '').slice(0, 10);
+      if (!d) return '';
+      if (d.length <= 3) return `(${d}`;
+      if (d.length <= 6) return `(${d.slice(0, 3)}) ${d.slice(3)}`;
+      return `(${d.slice(0, 3)}) ${d.slice(3, 6)}-${d.slice(6)}`;
+    }
+
+    function setFieldError(fieldId, errorMsg) {
+      const group = document.getElementById('fg-' + fieldId);
+      const errEl = document.getElementById('err-' + fieldId);
+      if (group && errEl) {
+        group.classList.add('has-error');
+        group.classList.remove('has-success');
+        errEl.textContent = errorMsg;
+      }
+    }
+
+    function clearFieldError(fieldId) {
+      const group = document.getElementById('fg-' + fieldId);
+      const errEl = document.getElementById('err-' + fieldId);
+      if (group && errEl) {
+        group.classList.remove('has-error');
+        group.classList.add('has-success');
+        errEl.textContent = '';
+      }
+    }
+
+    // Input elements & real-time masks
+    const inputName = document.getElementById('lead-name');
+    const inputPhone = document.getElementById('lead-phone');
+    const inputEmail = document.getElementById('lead-email');
+    const inputZip = document.getElementById('lead-zip');
+
+    if (inputPhone) {
+      inputPhone.addEventListener('input', (e) => {
+        const cursor = e.target.selectionStart;
+        const prevLen = e.target.value.length;
+        e.target.value = formatPhoneMask(e.target.value);
+        if (e.target.value.replace(/\D/g, '').length === 10) {
+          const err = validatePhone(e.target.value);
+          if (err) setFieldError('phone', err);
+          else clearFieldError('phone');
+        } else {
+          document.getElementById('fg-phone').classList.remove('has-error', 'has-success');
+        }
+      });
+      inputPhone.addEventListener('blur', (e) => {
+        if (e.target.value) {
+          const err = validatePhone(e.target.value);
+          if (err) setFieldError('phone', err);
+          else clearFieldError('phone');
+        }
+      });
+    }
+
+    if (inputZip) {
+      inputZip.addEventListener('input', (e) => {
+        e.target.value = e.target.value.replace(/\D/g, '').slice(0, 5);
+        if (e.target.value.length === 5) {
+          const err = validateZip(e.target.value);
+          if (err) setFieldError('zip', err);
+          else clearFieldError('zip');
+        } else {
+          document.getElementById('fg-zip').classList.remove('has-error', 'has-success');
+        }
+      });
+      inputZip.addEventListener('blur', (e) => {
+        if (e.target.value) {
+          const err = validateZip(e.target.value);
+          if (err) setFieldError('zip', err);
+          else clearFieldError('zip');
+        }
+      });
+    }
+
+    if (inputName) {
+      inputName.addEventListener('blur', (e) => {
+        if (e.target.value.trim()) {
+          const err = validateName(e.target.value);
+          if (err) setFieldError('name', err);
+          else clearFieldError('name');
+        }
+      });
+      inputName.addEventListener('input', (e) => {
+        document.getElementById('fg-name').classList.remove('has-error');
+      });
+    }
+
+    if (inputEmail) {
+      inputEmail.addEventListener('blur', (e) => {
+        if (e.target.value.trim()) {
+          const err = validateEmail(e.target.value);
+          if (err) setFieldError('email', err);
+          else clearFieldError('email');
+        }
+      });
+      inputEmail.addEventListener('input', (e) => {
+        document.getElementById('fg-email').classList.remove('has-error');
+      });
+    }
+
     function handleLeadSubmit(e) {
       e.preventDefault();
-      state.lead.name = document.getElementById('lead-name').value.trim();
-      state.lead.phone = document.getElementById('lead-phone').value.trim();
-      state.lead.email = document.getElementById('lead-email').value.trim();
-      state.lead.zip = document.getElementById('lead-zip').value.trim();
+
+      // Honeypot bot check
+      const hp = document.getElementById('lead-hp');
+      if (hp && hp.value.trim() !== '') {
+        console.warn('Spam submission detected and blocked.');
+        return;
+      }
+
+      const nameVal = inputName.value;
+      const phoneVal = inputPhone.value;
+      const emailVal = inputEmail.value;
+      const zipVal = inputZip.value;
+
+      const nameErr = validateName(nameVal);
+      const phoneErr = validatePhone(phoneVal);
+      const emailErr = validateEmail(emailVal);
+      const zipErr = validateZip(zipVal);
+
+      let hasErrors = false;
+      let firstInvalidInput = null;
+
+      if (nameErr) {
+        setFieldError('name', nameErr);
+        hasErrors = true;
+        if (!firstInvalidInput) firstInvalidInput = inputName;
+      } else {
+        clearFieldError('name');
+      }
+
+      if (phoneErr) {
+        setFieldError('phone', phoneErr);
+        hasErrors = true;
+        if (!firstInvalidInput) firstInvalidInput = inputPhone;
+      } else {
+        clearFieldError('phone');
+      }
+
+      if (emailErr) {
+        setFieldError('email', emailErr);
+        hasErrors = true;
+        if (!firstInvalidInput) firstInvalidInput = inputEmail;
+      } else {
+        clearFieldError('email');
+      }
+
+      if (zipErr) {
+        setFieldError('zip', zipErr);
+        hasErrors = true;
+        if (!firstInvalidInput) firstInvalidInput = inputZip;
+      } else {
+        clearFieldError('zip');
+      }
+
+      if (hasErrors) {
+        const formEl = document.getElementById('lead-form');
+        formEl.classList.remove('shake-error');
+        void formEl.offsetWidth; // trigger reflow for animation restart
+        formEl.classList.add('shake-error');
+        if (firstInvalidInput) firstInvalidInput.focus();
+        setTimeout(sendHeight, 100);
+        return;
+      }
+
+      // Validated successfully
+      state.lead.name = nameVal.trim();
+      state.lead.phone = phoneVal.trim();
+      state.lead.email = emailVal.trim();
+      state.lead.zip = zipVal.trim();
 
       document.getElementById('res-name').textContent = state.lead.name;
       document.getElementById('footer-status').innerHTML = `Lead Captured for <strong>${state.lead.name} (${state.lead.phone})</strong>!`;
