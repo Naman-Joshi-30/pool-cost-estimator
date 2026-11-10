@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Custom Pool Cost Estimator | Instant Pricing</title>
+  <script src="config.js"></script>
   <style>
     /* Reset & Base System */
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -907,69 +908,53 @@
       }
     }
 
-    // Presaved Client Profiles Database
-    const CLIENT_PROFILES = {
-      lonestar: {
-        name: "Lone Star Custom Pools",
-        phone: "(214) 555-0199",
-        theme: "amber"
-      },
-      bluewave: {
-        name: "BlueWave Pools & Spas",
-        phone: "(407) 555-8821",
-        theme: "cyan"
-      },
-      desert: {
-        name: "Desert Oasis Pools",
-        phone: "(480) 555-3412",
-        theme: "emerald"
-      },
-      premier: {
-        name: "Premier Luxury Pools",
-        phone: "(713) 555-9200",
-        theme: "navy"
-      }
+    // Centralized Client Configuration & Theming Engine
+    const FALLBACK_PROFILES = {
+      lonestar: { name: "Lone Star Custom Pools", legalName: "Lone Star Custom Pools, LLC", phone: "(214) 555-0199", city: "Dallas-Fort Worth, TX", theme: { grad: 'linear-gradient(135deg, #78350f 0%, #d97706 100%)', primary: '#d97706' } },
+      bluewave: { name: "BlueWave Pools & Spas", legalName: "BlueWave Pools & Spas, Inc.", phone: "(407) 555-8821", city: "Orlando, FL", theme: { grad: 'linear-gradient(135deg, #082f49 0%, #0284c7 100%)', primary: '#0284c7' } },
+      desert: { name: "Desert Oasis Pools", legalName: "Desert Oasis Pools & Landscapes", phone: "(480) 555-3412", city: "Scottsdale, AZ", theme: { grad: 'linear-gradient(135deg, #064e3b 0%, #059669 100%)', primary: '#059669' } },
+      premier: { name: "Premier Luxury Pools", legalName: "Premier Luxury Pools Group", phone: "(713) 555-9200", city: "Houston, TX", theme: { grad: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)', primary: '#2563eb' } }
     };
 
-    // Read clean short key like ?c=lonestar
-    const urlParams = new URLSearchParams(window.location.search);
-    const clientKey = (urlParams.get('c') || urlParams.get('client') || '').toLowerCase();
-    const profile = CLIENT_PROFILES[clientKey] || {};
-
-    const customCompany = profile.name || urlParams.get('company') || urlParams.get('name');
-    const customPhone = profile.phone || urlParams.get('phone');
-    const customTheme = profile.theme || urlParams.get('theme') || urlParams.get('color');
-
-    if (customCompany) {
-      document.querySelector('.header-title').textContent = `${customCompany} Estimator`;
-      document.querySelector('.header-sub').textContent = `Instant transparent pricing for ${customCompany} clients`;
-      const badgeLive = document.querySelector('.badge-live');
-      if (badgeLive) badgeLive.textContent = `● Verified for ${customCompany}`;
+    function resolveClientFallback(search) {
+      const p = new URLSearchParams(search || '');
+      const k = (p.get('c') || p.get('client') || '').trim().toLowerCase();
+      const matched = FALLBACK_PROFILES[k] || null;
+      const name = p.get('company') || p.get('name') || (matched ? matched.name : "Apex Custom Pools");
+      const phone = p.get('phone') || (matched ? matched.phone : "(555) 392-8821");
+      const theme = matched ? matched.theme : { grad: 'linear-gradient(135deg, #082f49 0%, #0284c7 100%)', primary: '#0284c7' };
+      return { name, phone, phoneClean: phone.replace(/\D/g, ''), theme };
     }
 
-    if (customPhone) {
-      const callBtn = document.querySelector('a[href^="tel:"]');
-      if (callBtn) {
-        callBtn.href = `tel:${customPhone.replace(/[^0-9]/g, '')}`;
-        callBtn.innerHTML = `Call Designer: ${customPhone}`;
+    const client = (window.PoolConfig && window.PoolConfig.resolveClient)
+      ? window.PoolConfig.resolveClient(window.location.search)
+      : resolveClientFallback(window.location.search);
+
+    function applyWidgetBranding(cfg) {
+      if (cfg.name) {
+        document.querySelector('.header-title').textContent = `${cfg.name} Estimator`;
+        document.querySelector('.header-sub').textContent = `Instant transparent pricing for ${cfg.name} clients`;
+        const badgeLive = document.querySelector('.badge-live');
+        if (badgeLive) badgeLive.textContent = `● Verified for ${cfg.name}`;
+      }
+
+      if (cfg.phone) {
+        const callBtn = document.querySelector('a[href^="tel:"]');
+        if (callBtn) {
+          callBtn.href = `tel:${cfg.phoneClean}`;
+          callBtn.innerHTML = `Call Designer: ${cfg.phone}`;
+        }
+      }
+
+      if (cfg.theme) {
+        const headerEl = document.querySelector('.calc-header');
+        if (headerEl) headerEl.style.background = cfg.theme.grad;
+        document.querySelectorAll('.btn-primary').forEach(b => b.style.background = cfg.theme.primary);
+        document.querySelectorAll('.final-price, .slider-val').forEach(el => el.style.color = cfg.theme.primary);
       }
     }
 
-    // Theme color palettes
-    const THEMES = {
-      emerald: { grad: 'linear-gradient(135deg, #064e3b 0%, #059669 100%)', primary: '#059669' },
-      amber: { grad: 'linear-gradient(135deg, #78350f 0%, #d97706 100%)', primary: '#d97706' },
-      navy: { grad: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)', primary: '#2563eb' },
-      cyan: { grad: 'linear-gradient(135deg, #082f49 0%, #0284c7 100%)', primary: '#0284c7' }
-    };
-
-    if (customTheme && THEMES[customTheme.toLowerCase()]) {
-      const t = THEMES[customTheme.toLowerCase()];
-      const headerEl = document.querySelector('.calc-header');
-      if (headerEl) headerEl.style.background = t.grad;
-      document.querySelectorAll('.btn-primary').forEach(b => b.style.background = t.primary);
-      document.querySelectorAll('.final-price, .slider-val').forEach(el => el.style.color = t.primary);
-    }
+    applyWidgetBranding(client);
 
     if (window.ResizeObserver) {
       const ro = new ResizeObserver(() => { sendHeight(); });
@@ -992,90 +977,84 @@
       if (s === 2) { bar.style.width = '66%'; l2.classList.add('active'); }
       if (s === 3) { bar.style.width = '90%'; l3.classList.add('active'); }
       if (s === 4) { bar.style.width = '100%'; l3.classList.add('active'); }
+
+      // Keep dynamic brand color intact across steps
+      if (client && client.theme && client.theme.primary) {
+        document.querySelectorAll('.btn-primary').forEach(b => b.style.background = client.theme.primary);
+        document.querySelectorAll('.final-price, .slider-val').forEach(el => el.style.color = client.theme.primary);
+      }
       
       setTimeout(sendHeight, 50);
     }
 
-    // ========================================================
-    // ADVANCED LEAD VALIDATION & INPUT HARDENING ENGINE
-    // ========================================================
-    const BANNED_EMAIL_DOMAINS = [
-      'test.com', 'fake.com', 'example.com', 'asdf.com', '123.com',
-      'sample.com', 'none.com', 'mailinator.com', 'tempmail.com',
-      'yopmail.com', 'trashmail.com', 'guerrillamail.com'
-    ];
+    // Fully Hardened Lead Validation Engine with zero-bypass fallback
+    const BANNED_DOMAINS = ['test.com', 'fake.com', 'example.com', 'asdf.com', '123.com', 'sample.com', 'none.com', 'mailinator.com', 'tempmail.com', 'yopmail.com', 'trashmail.com', 'guerrillamail.com'];
+    const BANNED_USERS = ['test', 'fake', 'asdf', 'admin', 'user', 'none', 'null', 'nobody', 'noone'];
 
-    const BANNED_EMAIL_USERS = ['test', 'fake', 'asdf', 'admin', 'user', 'none', 'null', 'nobody', 'noone'];
+    const validator = (window.PoolConfig && window.PoolConfig.validateName)
+      ? window.PoolConfig
+      : {
+          validateName: (raw) => {
+            const name = (raw || '').trim();
+            if (!name) return "Full name is required.";
+            if (name.length < 3) return "Name must be at least 3 characters.";
+            if (name.length > 60) return "Name is too long.";
+            if (!/^[a-zA-Z\s'.-]+$/.test(name)) return "Name can only contain letters, spaces, hyphens, and apostrophes.";
+            if (/^(.)\1+$/i.test(name.replace(/\s/g, ''))) return "Please enter a valid human name.";
+            const lower = name.toLowerCase();
+            if (['asdf', 'qwer', 'test', 'fake', 'none', 'unknown', 'nobody', 'abc', 'xyz', 'john doe'].includes(lower)) {
+              return "Please enter your actual first & last name.";
+            }
+            return null;
+          },
+          validatePhone: (raw) => {
+            let d = (raw || '').replace(/\D/g, '');
+            if (d.length === 11 && d[0] === '1') d = d.slice(1);
+            if (!d) return "Phone number is required for SMS estimate.";
+            if (d.length !== 10) return "Please enter a complete 10-digit mobile number.";
+            if (['0', '1'].includes(d[0])) return "Area code cannot start with 0 or 1.";
+            if (['0', '1'].includes(d[3])) return "Invalid mobile exchange code.";
+            if (/^(\d)\1{9}$/.test(d)) return "Please enter a valid, active phone number.";
+            if (['0123456789', '1234567890', '9876543210', '0987654321'].includes(d)) return "Sequential dummy numbers are not permitted.";
+            if (d.startsWith('555555') || d === '1231231234' || d === '1234561234') return "Please enter a valid, active phone number.";
+            return null;
+          },
+          validateEmail: (raw) => {
+            const email = (raw || '').trim().toLowerCase();
+            if (!email) return "Email address is required.";
+            const regex = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)+$/;
+            if (!regex.test(email)) return "Please enter a valid email format (e.g. name@domain.com).";
+            const parts = email.split('@');
+            const user = parts[0];
+            const domain = parts[1];
+            if (!domain || !domain.includes('.')) return "Email domain must include a valid extension.";
+            const tld = domain.split('.').pop();
+            if (tld.length < 2 || !/^[a-zA-Z]+$/.test(tld)) return "Email has an invalid top-level domain.";
+            if (BANNED_DOMAINS.includes(domain)) return "Please enter a valid personal or work email.";
+            if (BANNED_USERS.includes(user) && ['gmail.com', 'yahoo.com', 'hotmail.com', 'outlook.com'].includes(domain)) return "Please enter your actual personal or business email.";
+            return null;
+          },
+          validateZip: (raw) => {
+            const d = (raw || '').replace(/\D/g, '');
+            if (!d) return "Installation zip code is required.";
+            if (d.length !== 5) return "Please enter a valid 5-digit US zip code.";
+            if (/^(\d)\1{4}$/.test(d) || d === '00000') return "Please enter a valid geographic zip code.";
+            return null;
+          },
+          formatPhone: (val) => {
+            const d = (val || '').replace(/\D/g, '').slice(0, 10);
+            if (!d) return '';
+            if (d.length <= 3) return `(${d}`;
+            if (d.length <= 6) return `(${d.slice(0, 3)}) ${d.slice(3)}`;
+            return `(${d.slice(0, 3)}) ${d.slice(3, 6)}-${d.slice(6)}`;
+          }
+        };
 
-    function validateName(raw) {
-      const name = raw.trim();
-      if (!name) return "Full name is required.";
-      if (name.length < 3) return "Name must be at least 3 characters.";
-      if (name.length > 60) return "Name is too long.";
-      if (!/^[a-zA-Z\s'.-]+$/.test(name)) return "Name can only contain letters, spaces, hyphens, and apostrophes.";
-      if (/^(.)\1+$/i.test(name.replace(/\s/g, ''))) return "Please enter a valid human name.";
-      const lower = name.toLowerCase();
-      if (['asdf', 'qwer', 'test', 'fake', 'none', 'unknown', 'nobody', 'abc', 'xyz', 'john doe'].includes(lower)) {
-        return "Please enter your actual first & last name.";
-      }
-      return null;
-    }
-
-    function validatePhone(raw) {
-      let d = raw.replace(/\D/g, '');
-      if (d.length === 11 && d[0] === '1') d = d.slice(1);
-      if (!d) return "Phone number is required for SMS estimate.";
-      if (d.length !== 10) return "Please enter a complete 10-digit mobile number.";
-      if (['0', '1'].includes(d[0])) return "Area code cannot start with 0 or 1.";
-      if (['0', '1'].includes(d[3])) return "Invalid mobile exchange code.";
-      if (/^(\d)\1{9}$/.test(d)) return "Please enter a valid, active phone number.";
-      if (['0123456789', '1234567890', '9876543210', '0987654321'].includes(d)) {
-        return "Sequential dummy numbers are not permitted.";
-      }
-      if (d.startsWith('555555') || d === '1231231234' || d === '1234561234') {
-        return "Please enter a valid, active phone number.";
-      }
-      return null;
-    }
-
-    function validateEmail(raw) {
-      const email = raw.trim().toLowerCase();
-      if (!email) return "Email address is required.";
-      const emailRegex = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)+$/;
-      if (!emailRegex.test(email)) return "Please enter a valid email format (e.g. name@domain.com).";
-      
-      const parts = email.split('@');
-      const user = parts[0];
-      const domain = parts[1];
-      
-      if (!domain || !domain.includes('.')) return "Email domain must include a valid extension.";
-      const tld = domain.split('.').pop();
-      if (tld.length < 2 || !/^[a-zA-Z]+$/.test(tld)) return "Email has an invalid top-level domain.";
-      
-      if (BANNED_EMAIL_DOMAINS.includes(domain)) {
-        return "Please enter a valid personal or work email (temporary domains not accepted).";
-      }
-      if (BANNED_EMAIL_USERS.includes(user) && ['gmail.com', 'yahoo.com', 'hotmail.com', 'outlook.com'].includes(domain)) {
-        return "Please enter your actual personal or business email.";
-      }
-      return null;
-    }
-
-    function validateZip(raw) {
-      const d = raw.replace(/\D/g, '');
-      if (!d) return "Installation zip code is required.";
-      if (d.length !== 5) return "Please enter a valid 5-digit US zip code.";
-      if (/^(\d)\1{4}$/.test(d) || d === '00000') return "Please enter a valid geographic zip code.";
-      return null;
-    }
-
-    function formatPhoneMask(val) {
-      const d = val.replace(/\D/g, '').slice(0, 10);
-      if (!d) return '';
-      if (d.length <= 3) return `(${d}`;
-      if (d.length <= 6) return `(${d.slice(0, 3)}) ${d.slice(3)}`;
-      return `(${d.slice(0, 3)}) ${d.slice(3, 6)}-${d.slice(6)}`;
-    }
+    const validateName = validator.validateName;
+    const validatePhone = validator.validatePhone;
+    const validateEmail = validator.validateEmail;
+    const validateZip = validator.validateZip;
+    const formatPhoneMask = validator.formatPhone;
 
     function setFieldError(fieldId, errorMsg) {
       const group = document.getElementById('fg-' + fieldId);

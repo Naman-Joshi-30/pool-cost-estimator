@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Apex Custom Pools & Outdoor Living | Premier Inground Pool Builders</title>
   <meta name="description" content="Custom concrete and fiberglass inground pools. Use our 60-second instant pool cost calculator for transparent 2026 pricing.">
+  <script src="config.js"></script>
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
@@ -78,7 +79,7 @@
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/>
             </svg>
           </div>
-          <span class="hidden sm:inline">(555) 392-8821</span>
+          <span class="hidden sm:inline brand-phone-dynamic">(555) 392-8821</span>
         </a>
 
         <!-- Fast Estimator Anchor CTA -->
@@ -148,15 +149,18 @@
         <iframe id="estimator-frame" src="widget.html" class="w-full max-w-2xl border-0 transition-all duration-150" style="min-height: 850px;" scrolling="no" title="Instant Pool Cost Estimator"></iframe>
       </div>
       <script>
-        // Forward URL query parameters to iframe immediately
-        const frame = document.getElementById('estimator-frame');
-        if (frame && window.location.search) {
-          frame.src = 'widget.html' + window.location.search;
-        }
+        // Forward URL query parameters to iframe cleanly on first paint
+        (function initIframe() {
+          const frame = document.getElementById('estimator-frame');
+          if (frame) {
+            frame.src = 'widget.html' + (window.location.search || '');
+          }
+        })();
 
         // Auto-expand iframe to fit calculator height dynamically without cropping
         window.addEventListener('message', function(event) {
           if (event.data && typeof event.data.frameHeight === 'number') {
+            const frame = document.getElementById('estimator-frame');
             if (frame) {
               frame.style.height = Math.max(event.data.frameHeight, 750) + 'px';
             }
@@ -393,7 +397,7 @@
           Calculate Pool Price Now
         </a>
         <a href="tel:5553928821" class="w-full sm:w-auto px-7 py-3.5 bg-white/10 hover:bg-white/20 border border-white/20 text-white font-bold rounded-xl transition">
-          Call Our Office: (555) 392-8821
+          Call Our Office: <span class="brand-phone-dynamic">(555) 392-8821</span>
         </a>
       </div>
     </div>
@@ -406,7 +410,7 @@
   <footer class="bg-slate-900 text-slate-400 py-10 text-xs border-t border-slate-800">
     <div class="max-w-6xl mx-auto px-4 sm:px-6 flex flex-col sm:flex-row justify-between items-center gap-4">
       <div>
-        <p class="font-bold text-slate-200 brand-name-dynamic">Apex Custom Pools & Spas, LLC</p>
+        <p class="font-bold text-slate-200 brand-legal-dynamic">Apex Custom Pools & Spas, LLC</p>
         <p class="text-[11px] text-slate-500 mt-0.5">Licensed Commercial & Residential Pool Builder · License #TX-PL-88291</p>
       </div>
       <div class="text-[11px] text-slate-500 text-center sm:text-right">
@@ -425,7 +429,7 @@
       <svg class="w-4 h-4 text-brand-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/>
       </svg>
-      <span>Call (555) 392-8821</span>
+      <span>Call <span class="brand-phone-dynamic">(555) 392-8821</span></span>
     </a>
     <a href="#estimator" class="flex-1 py-2.5 bg-brand-600 hover:bg-brand-700 text-white font-extrabold text-xs rounded-xl flex items-center justify-center space-x-1 shadow-md shadow-brand-600/30 transition">
       <span>Get Instant Quote</span>
@@ -436,115 +440,57 @@
   <!-- Dynamic Branding & Full-Page Reskin Engine (Executes after complete DOM load) -->
   <script>
     (function initBranding() {
-      const CLIENT_PROFILES = {
-        lonestar: {
-          name: "Lone Star Custom Pools",
-          city: "Dallas-Fort Worth, TX",
-          phone: "(214) 555-0199",
-          theme: "amber"
-        },
-        bluewave: {
-          name: "BlueWave Pools & Spas",
-          city: "Orlando, FL",
-          phone: "(407) 555-8821",
-          theme: "cyan"
-        },
-        desert: {
-          name: "Desert Oasis Pools",
-          city: "Scottsdale, AZ",
-          phone: "(480) 555-3412",
-          theme: "emerald"
-        },
-        premier: {
-          name: "Premier Luxury Pools",
-          city: "Houston, TX",
-          phone: "(713) 555-9200",
-          theme: "navy"
-        }
-      };
+      const client = (window.PoolConfig && window.PoolConfig.resolveClient)
+        ? window.PoolConfig.resolveClient(window.location.search)
+        : {
+            name: "Apex Custom Pools",
+            legalName: "Apex Custom Pools & Spas, LLC",
+            phone: "(555) 392-8821",
+            phoneClean: "5553928821",
+            city: "Dallas-Fort Worth, TX",
+            theme: {
+              primary: '#0284c7',
+              hover: '#0369a1',
+              dark: '#082f49',
+              veryDark: '#031726',
+              light: '#e0f2fe',
+              textLight: '#0369a1',
+              accent: '#bae6fd',
+              gradText: 'linear-gradient(to right, #0284c7, #38bdf8)'
+            }
+          };
 
-      const urlParams = new URLSearchParams(window.location.search);
-      const clientKey = (urlParams.get('c') || urlParams.get('client') || '').toLowerCase();
-      const profile = CLIENT_PROFILES[clientKey] || {};
+      // 1. Update Title and Brand Name occurrences everywhere
+      document.title = `${client.name} | Premier Inground Pool Builders`;
+      
+      document.querySelectorAll('.brand-name-dynamic').forEach(el => {
+        el.textContent = client.name.toUpperCase();
+      });
 
-      const comp = profile.name || urlParams.get('company') || urlParams.get('name');
-      const phone = profile.phone || urlParams.get('phone');
-      const city = profile.city || urlParams.get('city');
-      const theme = profile.theme || urlParams.get('theme') || urlParams.get('color');
+      // Update legal business name in footer
+      document.querySelectorAll('.brand-legal-dynamic').forEach(el => {
+        el.textContent = client.legalName;
+      });
 
-      // Update all brand name elements across the entire page (header, table, footer, title)
-      if (comp) {
-        document.querySelectorAll('.brand-name-dynamic').forEach(el => {
-          el.textContent = comp.toUpperCase();
-        });
-        document.title = `${comp} | Premier Inground Pool Builders`;
-      }
+      // 2. Update all phone numbers & links cleanly
+      document.querySelectorAll('a[href^="tel:"]').forEach(a => {
+        a.href = `tel:${client.phoneClean}`;
+      });
+      document.querySelectorAll('.brand-phone-dynamic').forEach(el => {
+        el.textContent = client.phone;
+      });
 
-      // Update all phone links & text occurrences everywhere on the page
-      if (phone) {
-        document.querySelectorAll('a[href^="tel:"]').forEach(a => {
-          a.href = `tel:${phone.replace(/[^0-9]/g, '')}`;
-          // Replaces text whether inside a span or direct text
-          a.innerHTML = a.innerHTML.replace(/\(?555\)?[\s.-]*392[\s.-]*8821/g, phone);
-        });
-      }
+      // 3. Update city badges across the entire page
+      document.querySelectorAll('.hero-city-pill').forEach(el => {
+        el.textContent = `🏆 Voted #1 Custom Inground Pool Builder in ${client.city}`;
+      });
+      document.querySelectorAll('.announcement-city-pill').forEach(el => {
+        el.textContent = `Now Booking Spring & Summer 2026 Excavations in ${client.city} · Reserve Your 3D Yard Scan Today`;
+      });
 
-      // Update city badges across the entire page
-      if (city) {
-        document.querySelectorAll('.hero-city-pill').forEach(el => {
-          el.textContent = `🏆 Voted #1 Custom Inground Pool Builder in ${city}`;
-        });
-        document.querySelectorAll('.announcement-city-pill').forEach(el => {
-          el.textContent = `Now Booking Spring & Summer 2026 Excavations in ${city} · Reserve Your 3D Yard Scan Today`;
-        });
-      }
-
-      // Full Page Theme Color System
-      const LANDING_THEMES = {
-        amber: {
-          primary: '#d97706',
-          hover: '#b45309',
-          dark: '#78350f',
-          veryDark: '#451a03',
-          light: '#fef3c7',
-          textLight: '#92400e',
-          accent: '#fde68a',
-          gradText: 'linear-gradient(to right, #d97706, #f59e0b)'
-        },
-        emerald: {
-          primary: '#059669',
-          hover: '#047857',
-          dark: '#064e3b',
-          veryDark: '#022c22',
-          light: '#d1fae5',
-          textLight: '#065f46',
-          accent: '#a7f3d0',
-          gradText: 'linear-gradient(to right, #059669, #10b981)'
-        },
-        navy: {
-          primary: '#2563eb',
-          hover: '#1d4ed8',
-          dark: '#1e3a8a',
-          veryDark: '#0f172a',
-          light: '#dbeafe',
-          textLight: '#1e40af',
-          accent: '#93c5fd',
-          gradText: 'linear-gradient(to right, #2563eb, #3b82f6)'
-        },
-        cyan: {
-          primary: '#0284c7',
-          hover: '#0369a1',
-          dark: '#0c4a6e',
-          veryDark: '#082f49',
-          light: '#e0f2fe',
-          textLight: '#075985',
-          accent: '#a5f3fc',
-          gradText: 'linear-gradient(to right, #0284c7, #06b6d4)'
-        }
-      };
-
-      if (theme && LANDING_THEMES[theme.toLowerCase()]) {
-        const t = LANDING_THEMES[theme.toLowerCase()];
+      // 4. Dynamic Color Theme System
+      const t = client.theme;
+      if (t) {
         const styleEl = document.createElement('style');
         styleEl.id = 'theme-override';
         styleEl.innerHTML = `
