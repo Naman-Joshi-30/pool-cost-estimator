@@ -30,6 +30,7 @@
   // 2. PRESAVED CLIENT PROFILES
   // To add a new client in the future, just add one entry here!
   const CLIENT_PROFILES = {
+    // Demonstration & Reference Profiles
     lonestar: {
       name: 'Lone Star Custom Pools',
       legalName: 'Lone Star Custom Pools, LLC',
@@ -57,6 +58,78 @@
       phone: '(713) 555-9200',
       city: 'Houston, TX',
       theme: 'navy'
+    },
+
+    // Sprint Batch 1 Verified Targets (Ready for 1-Click Touch 2 Demos)
+    eliteol: {
+      name: 'Elite Outdoor Living',
+      legalName: 'Elite Outdoor Living LLC',
+      phone: '(469) 742-3802',
+      city: 'Frisco, TX',
+      theme: 'amber'
+    },
+    premierparadise: {
+      name: 'Premier Paradise',
+      legalName: 'Premier Paradise, Inc.',
+      phone: '(602) 320-7057',
+      city: 'Gilbert, AZ',
+      theme: 'navy'
+    },
+    liquidevolution: {
+      name: 'Liquid Evolution Pools',
+      legalName: 'Liquid Evolution Pools LLC',
+      phone: '(480) 518-8743',
+      city: 'Scottsdale, AZ',
+      theme: 'cyan'
+    },
+    livingstone: {
+      name: 'Living Stone Pools',
+      legalName: 'Living Stone Pools LLC',
+      phone: '(480) 797-4089',
+      city: 'Scottsdale, AZ',
+      theme: 'emerald'
+    },
+    allseasons: {
+      name: 'All Seasons Pools',
+      legalName: 'All Seasons Pool Service, Inc.',
+      phone: '(407) 871-2020',
+      city: 'Orlando, FL',
+      theme: 'cyan'
+    },
+    poolpro: {
+      name: 'Pool Pro Agency',
+      legalName: 'Pool Pro Agency Inc.',
+      phone: '(778) 766-3830',
+      city: 'North America',
+      theme: 'cyan'
+    },
+    halstead: {
+      name: 'Halstead Media Group',
+      legalName: 'Halstead Media Group LLC',
+      phone: '(800) 555-0199',
+      city: 'National',
+      theme: 'emerald'
+    },
+    poolmarketing: {
+      name: 'PoolMarketing.com',
+      legalName: 'PoolMarketing.com Inc.',
+      phone: '(916) 467-9118',
+      city: 'Sacramento, CA',
+      theme: 'navy'
+    },
+    poolbuilderleads: {
+      name: 'PoolBuilderLeads.ai',
+      legalName: 'JP Innovation Inc.',
+      phone: '(224) 567-1650',
+      city: 'Chicago, IL',
+      theme: 'amber'
+    },
+    backyardmarketing: {
+      name: 'Backyard Marketing Pros',
+      legalName: 'AAMP Agency / Backyard Marketing Pros',
+      phone: '(800) 555-0144',
+      city: 'National',
+      theme: 'emerald'
     }
   };
 
@@ -126,6 +199,8 @@
     const legalName = matched ? matched.legalName : `${name}, LLC`;
 
     const theme = THEMES[themeKey] || THEMES.cyan;
+    const webhook = params.get('webhook') || (matched ? matched.webhook : null);
+    const rates = (matched && matched.rates) ? matched.rates : null;
 
     return {
       key: clientKey || 'default',
@@ -136,7 +211,9 @@
       phoneClean: phone.replace(/\D/g, ''),
       city: city,
       themeKey: themeKey,
-      theme: theme
+      theme: theme,
+      webhook: webhook,
+      rates: rates
     };
   }
 

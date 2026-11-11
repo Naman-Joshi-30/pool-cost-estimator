@@ -805,7 +805,32 @@
   </div>
 
   <script>
-    const BASE_RATES = { concrete: 105, fiberglass: 92, vinyl: 68 };
+    // Centralized Client Configuration & Theming Engine
+    const FALLBACK_PROFILES = {
+      lonestar: { name: "Lone Star Custom Pools", legalName: "Lone Star Custom Pools, LLC", phone: "(214) 555-0199", city: "Dallas-Fort Worth, TX", theme: { grad: 'linear-gradient(135deg, #78350f 0%, #d97706 100%)', primary: '#d97706' } },
+      bluewave: { name: "BlueWave Pools & Spas", legalName: "BlueWave Pools & Spas, Inc.", phone: "(407) 555-8821", city: "Orlando, FL", theme: { grad: 'linear-gradient(135deg, #082f49 0%, #0284c7 100%)', primary: '#0284c7' } },
+      desert: { name: "Desert Oasis Pools", legalName: "Desert Oasis Pools & Landscapes", phone: "(480) 555-3412", city: "Scottsdale, AZ", theme: { grad: 'linear-gradient(135deg, #064e3b 0%, #059669 100%)', primary: '#059669' } },
+      premier: { name: "Premier Luxury Pools", legalName: "Premier Luxury Pools Group", phone: "(713) 555-9200", city: "Houston, TX", theme: { grad: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)', primary: '#2563eb' } }
+    };
+
+    function resolveClientFallback(search) {
+      const p = new URLSearchParams(search || '');
+      const k = (p.get('c') || p.get('client') || '').trim().toLowerCase();
+      const matched = FALLBACK_PROFILES[k] || null;
+      const name = p.get('company') || p.get('name') || (matched ? matched.name : "Apex Custom Pools");
+      const phone = p.get('phone') || (matched ? matched.phone : "(555) 392-8821");
+      const theme = matched ? matched.theme : { grad: 'linear-gradient(135deg, #082f49 0%, #0284c7 100%)', primary: '#0284c7' };
+      return { name, phone, phoneClean: phone.replace(/\D/g, ''), theme, rates: null, webhook: null };
+    }
+
+    const client = (window.PoolConfig && window.PoolConfig.resolveClient)
+      ? window.PoolConfig.resolveClient(window.location.search)
+      : resolveClientFallback(window.location.search);
+
+    const BASE_RATES = Object.assign(
+      { concrete: 105, fiberglass: 92, vinyl: 68 },
+      (client && client.rates) ? client.rates : {}
+    );
     const DEPTH_MULTS = { shallow: 0.95, standard: 1.0, diving: 1.15 };
     const EQUIPMENT_FEE = 8500;
     const DECKING_SQFT_RATE = 18;
@@ -907,28 +932,6 @@
         window.parent.postMessage({ frameHeight: height + 20 }, '*');
       }
     }
-
-    // Centralized Client Configuration & Theming Engine
-    const FALLBACK_PROFILES = {
-      lonestar: { name: "Lone Star Custom Pools", legalName: "Lone Star Custom Pools, LLC", phone: "(214) 555-0199", city: "Dallas-Fort Worth, TX", theme: { grad: 'linear-gradient(135deg, #78350f 0%, #d97706 100%)', primary: '#d97706' } },
-      bluewave: { name: "BlueWave Pools & Spas", legalName: "BlueWave Pools & Spas, Inc.", phone: "(407) 555-8821", city: "Orlando, FL", theme: { grad: 'linear-gradient(135deg, #082f49 0%, #0284c7 100%)', primary: '#0284c7' } },
-      desert: { name: "Desert Oasis Pools", legalName: "Desert Oasis Pools & Landscapes", phone: "(480) 555-3412", city: "Scottsdale, AZ", theme: { grad: 'linear-gradient(135deg, #064e3b 0%, #059669 100%)', primary: '#059669' } },
-      premier: { name: "Premier Luxury Pools", legalName: "Premier Luxury Pools Group", phone: "(713) 555-9200", city: "Houston, TX", theme: { grad: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)', primary: '#2563eb' } }
-    };
-
-    function resolveClientFallback(search) {
-      const p = new URLSearchParams(search || '');
-      const k = (p.get('c') || p.get('client') || '').trim().toLowerCase();
-      const matched = FALLBACK_PROFILES[k] || null;
-      const name = p.get('company') || p.get('name') || (matched ? matched.name : "Apex Custom Pools");
-      const phone = p.get('phone') || (matched ? matched.phone : "(555) 392-8821");
-      const theme = matched ? matched.theme : { grad: 'linear-gradient(135deg, #082f49 0%, #0284c7 100%)', primary: '#0284c7' };
-      return { name, phone, phoneClean: phone.replace(/\D/g, ''), theme };
-    }
-
-    const client = (window.PoolConfig && window.PoolConfig.resolveClient)
-      ? window.PoolConfig.resolveClient(window.location.search)
-      : resolveClientFallback(window.location.search);
 
     function applyWidgetBranding(cfg) {
       if (cfg.name) {
@@ -1223,6 +1226,47 @@
 
       document.getElementById('res-name').textContent = state.lead.name;
       document.getElementById('footer-status').innerHTML = `Lead Captured for <strong>${state.lead.name} (${state.lead.phone})</strong>!`;
+
+      // Live Lead Dispatch Engine (Webhooks / Formspree / GHL / Demonstration)
+      const leadPayload = {
+        client: (client && client.name) ? client.name : 'Apex Custom Pools',
+        clientKey: (client && client.key) ? client.key : 'default',
+        timestamp: new Date().toISOString(),
+        contact: {
+          name: state.lead.name,
+          phone: state.lead.phone,
+          email: state.lead.email,
+          zip: state.lead.zip,
+          timeline: state.lead.timeline
+        },
+        project: {
+          poolType: state.poolType,
+          dimensions: `${state.length}' x ${state.width}'`,
+          depth: state.depth,
+          deckingSqFt: state.deckingSqFt,
+          upgrades: state.upgrades,
+          estimatedRange: document.getElementById('res-price') ? document.getElementById('res-price').textContent : '',
+          monthlyPayment: document.getElementById('res-financing') ? document.getElementById('res-financing').textContent : ''
+        }
+      };
+
+      const dispatchEndpoint = (client && client.webhook) ? client.webhook : null;
+      if (dispatchEndpoint) {
+        try {
+          fetch(dispatchEndpoint, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(leadPayload),
+            mode: 'cors'
+          }).catch(function (dispatchErr) {
+            console.warn('Lead dispatch note:', dispatchErr);
+          });
+        } catch (fetchErr) {
+          console.warn('Dispatch attempt:', fetchErr);
+        }
+      } else {
+        console.log('[LEAD DISPATCH ENGINE]: Active Lead Payload Prepared:', leadPayload);
+      }
       
       goToStep(4);
     }
