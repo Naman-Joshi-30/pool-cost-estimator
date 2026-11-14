@@ -1,9 +1,9 @@
 /**
  * Centralized Configuration & Client Theming Engine
  * Pool Cost Estimator & Landing Page System
- * 
+ *
  * Single source of truth for:
- * 1. Presaved client profiles (add new clients here in 10 seconds)
+ * 1. Presaved client profiles
  * 2. Theme color palettes (widget & landing page)
  * 3. Client URL parameter resolution (?c=tag or query overrides)
  * 4. Input validation engine & formatting rules
@@ -24,11 +24,11 @@
     legalName: 'Apex Custom Pools & Spas, LLC',
     phone: '(555) 392-8821',
     city: 'Dallas-Fort Worth, TX',
-    theme: 'cyan'
+    theme: 'cyan',
+    license: 'State-Licensed & Insured Master Pool Builder'
   };
 
   // 2. PRESAVED CLIENT PROFILES
-  // To add a new client in the future, just add one entry here!
   const CLIENT_PROFILES = {
     // Demonstration & Reference Profiles
     lonestar: {
@@ -60,7 +60,7 @@
       theme: 'navy'
     },
 
-    // Sprint Batch 1 Verified Targets (Ready for 1-Click Touch 2 Demos)
+    // Sprint Batch 1 Verified Targets
     eliteol: {
       name: 'Elite Outdoor Living',
       legalName: 'Elite Outdoor Living LLC',
@@ -96,6 +96,41 @@
       city: 'Orlando, FL',
       theme: 'cyan'
     },
+    texastinypools: {
+      name: 'Texas Tiny Pools',
+      legalName: 'Texas Tiny Pools LLC',
+      phone: '(512) 496-0119',
+      city: 'Austin, TX',
+      theme: 'emerald'
+    },
+    garypools: {
+      name: 'Gary Pools',
+      legalName: 'Gary Pools Inc.',
+      phone: '(210) 880-9773',
+      city: 'San Antonio, TX',
+      theme: 'cyan'
+    },
+    larsenspool: {
+      name: "Larsen's Pool & Spa",
+      legalName: "Larsen's Pool & Spa LLC",
+      phone: '(727) 786-7665',
+      city: 'Tampa, FL',
+      theme: 'emerald'
+    },
+    poolcreationsfl: {
+      name: 'Pool Creations',
+      legalName: 'R.A.C.E. Pool & Spa Services, LLC',
+      phone: '(941) 366-6000',
+      city: 'Sarasota, FL',
+      theme: 'navy'
+    },
+    clarksonpools: {
+      name: 'Clarkson Pools',
+      legalName: 'Pools by John Clarkson, Inc.',
+      phone: '(904) 223-4050',
+      city: 'Jacksonville, FL',
+      theme: 'amber'
+    },
     poolpro: {
       name: 'Pool Pro Agency',
       legalName: 'Pool Pro Agency Inc.',
@@ -105,8 +140,8 @@
     },
     halstead: {
       name: 'Halstead Media Group',
-      legalName: 'Halstead Media Group LLC',
-      phone: '(800) 555-0199',
+      legalName: 'Halstead Media Group, LLC',
+      phone: '',
       city: 'National',
       theme: 'emerald'
     },
@@ -127,8 +162,8 @@
     backyardmarketing: {
       name: 'Backyard Marketing Pros',
       legalName: 'AAMP Agency / Backyard Marketing Pros',
-      phone: '(800) 555-0144',
-      city: 'National',
+      phone: '(702) 960-4311',
+      city: 'Las Vegas, NV / National',
       theme: 'emerald'
     }
   };
@@ -189,18 +224,25 @@
   function resolveClient(searchString) {
     const params = new URLSearchParams(searchString || '');
     const clientKey = (params.get('c') || params.get('client') || '').trim().toLowerCase();
-    
+
     const matched = CLIENT_PROFILES[clientKey] || null;
-    
+
     const name = params.get('company') || params.get('name') || (matched ? matched.name : DEFAULT_PROFILE.name);
-    const phone = params.get('phone') || (matched ? matched.phone : DEFAULT_PROFILE.phone);
+    const phoneParam = params.get('phone');
+    const phone = phoneParam !== null
+      ? phoneParam
+      : (matched && typeof matched.phone === 'string' ? matched.phone : DEFAULT_PROFILE.phone);
     const city = params.get('city') || (matched ? matched.city : DEFAULT_PROFILE.city);
     const themeKey = (params.get('theme') || params.get('color') || (matched ? matched.theme : DEFAULT_PROFILE.theme) || 'cyan').toLowerCase();
     const legalName = matched ? matched.legalName : `${name}, LLC`;
+    const license = params.get('license') || (matched && matched.license) || DEFAULT_PROFILE.license;
 
     const theme = THEMES[themeKey] || THEMES.cyan;
     const webhook = params.get('webhook') || (matched ? matched.webhook : null);
     const rates = (matched && matched.rates) ? matched.rates : null;
+    const bookingUrl = params.get('booking') || (matched ? matched.bookingUrl : null) || null;
+    const privacyUrl = params.get('privacy') || (matched ? matched.privacyUrl : null) || null;
+    const termsUrl = params.get('terms') || (matched ? matched.termsUrl : null) || null;
 
     return {
       key: clientKey || 'default',
@@ -208,16 +250,20 @@
       name: name,
       legalName: legalName,
       phone: phone,
-      phoneClean: phone.replace(/\D/g, ''),
+      phoneClean: (phone || '').replace(/\D/g, ''),
       city: city,
+      license: license,
       themeKey: themeKey,
       theme: theme,
       webhook: webhook,
-      rates: rates
+      rates: rates,
+      bookingUrl: bookingUrl,
+      privacyUrl: privacyUrl,
+      termsUrl: termsUrl
     };
   }
 
-  // 5. BULLETPROOF VALIDATION ENGINE
+  // 5. VALIDATION ENGINE
   const BANNED_EMAIL_DOMAINS = [
     'test.com', 'fake.com', 'example.com', 'asdf.com', '123.com',
     'sample.com', 'none.com', 'mailinator.com', 'tempmail.com',
@@ -227,68 +273,68 @@
   const BANNED_EMAIL_USERS = ['test', 'fake', 'asdf', 'admin', 'user', 'none', 'null', 'nobody', 'noone'];
 
   function validateName(raw) {
-    if (typeof raw !== 'string') return "Full name is required.";
+    if (typeof raw !== 'string') return 'Full name is required.';
     const name = raw.trim();
-    if (!name) return "Full name is required.";
-    if (name.length < 3) return "Name must be at least 3 characters.";
-    if (name.length > 60) return "Name is too long.";
-    if (!/^[a-zA-Z\s'.-]+$/.test(name)) return "Name can only contain letters, spaces, hyphens, and apostrophes.";
-    if (/^(.)\1+$/i.test(name.replace(/\s/g, ''))) return "Please enter a valid human name.";
+    if (!name) return 'Full name is required.';
+    if (name.length < 2) return 'Name must be at least 2 characters.';
+    if (name.length > 60) return 'Name is too long.';
+    if (!/^[a-zA-Z\s'.-]+$/.test(name)) return 'Name can only contain letters, spaces, hyphens, and apostrophes.';
+    if (/^(.)\1+$/i.test(name.replace(/\s/g, ''))) return 'Please enter a valid human name.';
     const lower = name.toLowerCase();
     if (['asdf', 'qwer', 'test', 'fake', 'none', 'unknown', 'nobody', 'abc', 'xyz', 'john doe'].includes(lower)) {
-      return "Please enter your actual first & last name.";
+      return 'Please enter your actual first & last name.';
     }
     return null;
   }
 
   function validatePhone(raw) {
-    if (typeof raw !== 'string') return "Phone number is required for SMS estimate.";
+    if (typeof raw !== 'string') return 'Phone number is required.';
     let d = raw.replace(/\D/g, '');
     if (d.length === 11 && d[0] === '1') d = d.slice(1);
-    if (!d) return "Phone number is required for SMS estimate.";
-    if (d.length !== 10) return "Please enter a complete 10-digit mobile number.";
-    if (['0', '1'].includes(d[0])) return "Area code cannot start with 0 or 1.";
-    if (['0', '1'].includes(d[3])) return "Invalid mobile exchange code.";
-    if (/^(\d)\1{9}$/.test(d)) return "Please enter a valid, active phone number.";
+    if (!d) return 'Phone number is required.';
+    if (d.length !== 10) return 'Please enter a complete 10-digit mobile number.';
+    if (['0', '1'].includes(d[0])) return 'Area code cannot start with 0 or 1.';
+    if (['0', '1'].includes(d[3])) return 'Invalid mobile exchange code.';
+    if (/^(\d)\1{9}$/.test(d)) return 'Please enter a valid, active phone number.';
     if (['0123456789', '1234567890', '9876543210', '0987654321'].includes(d)) {
-      return "Sequential dummy numbers are not permitted.";
+      return 'Sequential dummy numbers are not permitted.';
     }
     if (d.startsWith('555555') || d === '1231231234' || d === '1234561234') {
-      return "Please enter a valid, active phone number.";
+      return 'Please enter a valid, active phone number.';
     }
     return null;
   }
 
   function validateEmail(raw) {
-    if (typeof raw !== 'string') return "Email address is required.";
+    if (typeof raw !== 'string') return 'Email address is required.';
     const email = raw.trim().toLowerCase();
-    if (!email) return "Email address is required.";
+    if (!email) return 'Email address is required.';
     const emailRegex = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)+$/;
-    if (!emailRegex.test(email)) return "Please enter a valid email format (e.g. name@domain.com).";
-    
+    if (!emailRegex.test(email)) return 'Please enter a valid email format (e.g. name@domain.com).';
+
     const parts = email.split('@');
     const user = parts[0];
     const domain = parts[1];
-    
-    if (!domain || !domain.includes('.')) return "Email domain must include a valid extension.";
+
+    if (!domain || !domain.includes('.')) return 'Email domain must include a valid extension.';
     const tld = domain.split('.').pop();
-    if (tld.length < 2 || !/^[a-zA-Z]+$/.test(tld)) return "Email has an invalid top-level domain.";
-    
+    if (tld.length < 2 || !/^[a-zA-Z]+$/.test(tld)) return 'Email has an invalid top-level domain.';
+
     if (BANNED_EMAIL_DOMAINS.includes(domain)) {
-      return "Please enter a valid personal or work email (temporary domains not accepted).";
+      return 'Please enter a valid personal or work email (temporary domains not accepted).';
     }
     if (BANNED_EMAIL_USERS.includes(user) && ['gmail.com', 'yahoo.com', 'hotmail.com', 'outlook.com'].includes(domain)) {
-      return "Please enter your actual personal or business email.";
+      return 'Please enter your actual personal or business email.';
     }
     return null;
   }
 
   function validateZip(raw) {
-    if (typeof raw !== 'string') return "Installation zip code is required.";
+    if (typeof raw !== 'string') return 'Installation zip code is required.';
     const d = raw.replace(/\D/g, '');
-    if (!d) return "Installation zip code is required.";
-    if (d.length !== 5) return "Please enter a valid 5-digit US zip code.";
-    if (/^(\d)\1{4}$/.test(d) || d === '00000') return "Please enter a valid geographic zip code.";
+    if (!d) return 'Installation zip code is required.';
+    if (d.length !== 5) return 'Please enter a valid 5-digit US zip code.';
+    if (/^(\d)\1{4}$/.test(d) || d === '00000') return 'Please enter a valid geographic zip code.';
     return null;
   }
 
