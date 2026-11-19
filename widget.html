@@ -52,6 +52,18 @@
       gap: 10px;
       margin-bottom: 12px;
     }
+    @media (max-width: 580px) {
+      .header-top {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+      }
+      .calc-header { padding: 18px 16px; }
+      .calc-body { padding: 18px 16px; }
+      .header-title { font-size: 18px; }
+      .floor-anchor-pill { font-size: 11px; padding: 6px 10px; }
+      .step-labels { font-size: 11px; }
+    }
     .header-title { font-size: 20px; font-weight: 800; letter-spacing: -0.02em; }
     .header-sub { font-size: 13px; color: #e2e8f0; margin-top: 2px; }
     .badge-live {
@@ -1484,7 +1496,7 @@
         document.querySelector('.header-title').textContent = `${cfg.name} Estimator`;
         document.querySelector('.header-sub').textContent = `Instant local planning ranges for ${cfg.name} clients`;
         const badgeLive = document.querySelector('.badge-live');
-        if (badgeLive) badgeLive.textContent = `● Verified for ${cfg.name}`;
+        if (badgeLive) badgeLive.textContent = `● Interactive Preview: ${cfg.name}`;
 
         const tcpaComp = document.getElementById('tcpa-company-name');
         if (tcpaComp) tcpaComp.textContent = cfg.name;
